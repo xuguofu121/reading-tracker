@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>阅读打卡小助手</title>
+<style>
+:root{--p:#D4A574;--pd:#B8895A;--s:#4A7C6F;--sl:#5E9E8A;--a:#E8845F;--al:#F0A080;--bg:#FDF8F3;--c:#fff;--t:#2C2416;--ts:#7A6F5D;--tl:#A89880;--ok:#4CAF50;--wr:#FFB300;--er:#E55B5B;--ss:0 2px 8px rgba(44,36,22,.06);--sm:0 4px 20px rgba(44,36,22,.10);--slg:0 8px 40px rgba(44,36,22,.14);--rsm:8px;--rmd:16px;--rlg:24px;--font:system-ui,sans-serif;--tr:all .3s cubic-bezier(.4,0,.2,1);}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--t);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--p);border-radius:2px}
+.welcome{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;position:relative;overflow:hidden}
+.welcome::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(212,165,116,.2) 0%,transparent 50%),radial-gradient(ellipse at 70% 75%,rgba(74,124,111,.14) 0%,transparent 50%);pointer-events:none}
+.welcome-content{text-align:center;max-width:400px;position:relative;z-index:1}
+.welcome-icon{width:96px;height:96px;margin:0 auto 28px;background:linear-gradient(135deg,var(--p),var(--pd));border-radius:26px;display:flex;align-items:center;justify-content:center;font-size:46px;box-shadow:0 8px 32px rgba(212,165,116,.35);animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.welcome-title{font-size:2rem;font-weight:700;color:var(--t);margin-bottom:10px}
+.welcome-title span{background:linear-gradient(135deg,var(--p),var(--a));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.welcome-sub{font-size:.95rem;color:var(--ts);line-height:1.7;margin-bottom:40px}
+.role-btn{display:flex;align-items:center;gap:16px;width:100%;padding:18px 20px;background:var(--c);border:2px solid transparent;border-radius:var(--rmd);cursor:pointer;transition:var(--tr);text-align:left;box-shadow:var(--ss);margin-bottom:14px}
+.role-btn:hover{transform:translateY(-2px);box-shadow:var(--sm);border-color:var(--p)}
+.role-icon{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.role-icon.s{background:linear-gradient(135deg,#FFF3E0,#FFE0B2);color:var(--a)}
+.role-icon.p{background:linear-gradient(135deg,#E8F5E9,#C8E6C9);color:var(--s)}
+.role-text h3{font-size:1rem;font-weight:700;color:var(--t);margin-bottom:3px}
+.role-text p{font-size:.82rem;color:var(--ts)}
+.role-arrow{margin-left:auto;width:30px;height:30px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--tl);transition:var(--tr);font-size:14px}
+.role-btn:hover .role-arrow{background:var(--p);color:#fff}
+.app-shell{display:none;flex-direction:column;min-height:100vh}
+.app-shell.active{display:flex}
+.welcome.hidden{display:none}
+.app-header{position:sticky;top:0;z-index:100;background:rgba(253,248,243,.9);backdrop-filter:blur(12px);border-bottom:1px solid rgba(212,165,116,.15);padding:0 16px}
+.role-banner{display:flex;align-items:center;justify-content:center;gap:8px;padding:7px 16px;background:linear-gradient(135deg,rgba(212,165,116,.1),rgba(74,124,111,.08));font-size:.78rem;color:var(--ts)}
+.role-banner span{font-weight:600}
+.role-switch-btn{padding:2px 10px;border-radius:20px;border:1.5px solid var(--p);background:transparent;color:var(--pd);font-size:.75rem;font-weight:600;cursor:pointer;font-family:var(--font);transition:var(--tr)}
+.role-switch-btn:hover{background:var(--p);color:#fff}
+.header-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0}
+.header-title{font-weight:700;font-size:1.05rem;color:var(--t)}
+.back-btn{width:34px;height:34px;border-radius:10px;background:var(--c);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:var(--ss);transition:var(--tr);color:var(--t)}
+.back-btn:hover{background:var(--p);color:#fff}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.94);backdrop-filter:blur(16px);border-top:1px solid rgba(212,165,116,.12);padding:6px 0;padding-bottom:max(6px,env(safe-area-inset-bottom));display:flex;justify-content:space-around;box-shadow:0 -4px 20px rgba(44,36,22,.05)}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 12px;border:none;background:none;cursor:pointer;border-radius:12px;transition:var(--tr);color:var(--tl);font-family:var(--font);font-size:.68rem;font-weight:500;position:relative}
+.nav-item.active{color:var(--p)}
+.nav-item.active::before{content:'';position:absolute;top:-1px;width:20px;height:3px;background:var(--p);border-radius:2px}
+.nav-icon{font-size:20px;line-height:1}
+.nav-item:hover{background:var(--bg)}
+.page{display:none;animation:fadeIn .3s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.page-wrap{flex:1;padding:16px 14px;padding-bottom:80px;max-width:480px;margin:0 auto;width:100%}
+.today-hero{background:linear-gradient(135deg,#FFF8F0,#FFF3E6);border-radius:var(--rlg);padding:24px 20px;margin-bottom:16px;position:relative;overflow:hidden}
+.today-hero::before{content:'';position:absolute;top:-15px;right:-15px;width:100px;height:100px;background:radial-gradient(circle,rgba(212,165,116,.22) 0%,transparent 70%);border-radius:50%}
+.hero-label{display:inline-flex;align-items:center;gap:5px;padding:3px 11px;background:rgba(212,165,116,.2);border-radius:20px;font-size:.72rem;font-weight:600;color:var(--pd);margin-bottom:14px}
+.hero-greet{font-size:1.4rem;font-weight:700;color:var(--t);margin-bottom:3px}
+.hero-date{font-size:.82rem;color:var(--ts);margin-bottom:18px}
+.streak-badge{display:inline-flex;align-items:center;gap:10px;padding:9px 16px;background:#fff;border-radius:14px;box-shadow:var(--ss);margin-bottom:20px}
+.streak-flame{font-size:26px;animation:flame 1.5s ease-in-out infinite}
+@keyframes flame{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.streak-info h4{font-size:1rem;font-weight:700;color:var(--a)}
+.streak-info p{font-size:.72rem;color:var(--ts)}
+.streak-count{margin-left:auto;font-size:1.7rem;font-weight:700;color:var(--a);font-family:monospace}
+.checkin-card{background:var(--c);border-radius:var(--rlg);padding:20px;box-shadow:var(--sm);margin-bottom:16px}
+.card-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.card-icon{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#FFF3E0,#FFE0B2);display:flex;align-items:center;justify-content:center;font-size:20px}
+.card-title{font-size:.95rem;font-weight:700;color:var(--t)}
+.card-sub{font-size:.78rem;color:var(--ts)}
+.book-select{display:flex;gap:12px;padding:12px;background:var(--bg);border-radius:var(--rsm);margin-bottom:16px;cursor:pointer;transition:var(--tr);border:2px solid transparent}
+.book-select:hover{border-color:var(--p)}
+.book-cover{width:52px;height:68px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;box-shadow:var(--ss)}
+.book-info{flex:1;min-width:0}
+.book-title{font-weight:600;font-size:.9rem;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.book-author{font-size:.75rem;color:var(--ts);margin-bottom:7px}
+.progress-bar{height:5px;background:rgba(212,165,116,.2);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--p),var(--a));border-radius:3px;transition:width .5s}
+.progress-text{font-size:.7rem;color:var(--tl);margin-top:4px;font-family:monospace}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.form-field{display:flex;flex-direction:column;gap:5px}
+.form-field.full{grid-column:1/-1}
+.form-label{font-size:.78rem;font-weight:600;color:var(--ts)}
+.form-input{padding:11px 13px;border:2px solid rgba(212,165,116,.2);border-radius:var(--rsm);font-family:var(--font);font-size:.92rem;color:var(--t);background:var(--bg);transition:var(--tr);outline:none}
+.form-input:focus{border-color:var(--p);background:#fff;box-shadow:0 0 0 3px rgba(212,165,116,.12)}
+.mood-row{display:flex;gap:10px;justify-content:center;margin-bottom:14px}
+.mood-btn{width:50px;height:50px;border-radius:13px;border:2px solid transparent;background:var(--bg);cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;transition:var(--tr)}
+.mood-btn:hover{transform:scale(1.1)}
+.mood-btn.selected{border-color:var(--a);background:rgba(232,132,95,.1);transform:scale(1.05)}
+.note-input{width:100%;padding:11px 13px;border:2px solid rgba(212,165,116,.2);border-radius:var(--rsm);font-family:var(--font);font-size:.88rem;color:var(--t);background:var(--bg);outline:none;resize:none;height:76px;transition:var(--tr)}
+.note-input:focus{border-color:var(--p);background:#fff}
+.checkin-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--a),var(--al));border:none;border-radius:var(--rmd);color:#fff;font-family:var(--font);font-size:1.05rem;font-weight:700;cursor:pointer;transition:var(--tr);box-shadow:0 4px 16px rgba(232,132,95,.35);margin-top:6px}
+.checkin-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(232,132,95,.45)}
+.checkin-btn.done{background:linear-gradient(135deg,var(--ok),#66BB6A);cursor:default;box-shadow:0 4px 16px rgba(76,175,80,.25)}
+.checkin-btn.done:hover{transform:none}
+.already-done{text-align:center;padding:20px 0}
+.already-done-icon{font-size:50px;margin-bottom:10px;animation:bounceIn .5s ease}
+@keyframes bounceIn{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+.already-done h3{font-size:1.1rem;color:var(--ok);margin-bottom:5px}
+.already-done p{font-size:.82rem;color:var(--ts)}
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.quick-card{background:var(--c);border-radius:var(--rmd);padding:16px;box-shadow:var(--ss);cursor:pointer;transition:var(--tr)}
+.quick-card:hover{box-shadow:var(--sm);transform:translateY(-1px)}
+.quick-icon{font-size:20px;margin-bottom:8px}
+.quick-val{font-size:1.4rem;font-weight:700;color:var(--t);font-family:monospace}
+.quick-label{font-size:.75rem;color:var(--ts)}
+.quick-card.accent{background:linear-gradient(135deg,#FFF8F0,#FFF3E6)}
+.shelf-tabs{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.shelf-tabs::-webkit-scrollbar{display:none}
+.tab-btn{padding:7px 16px;border-radius:20px;border:2px solid rgba(212,165,116,.25);background:var(--c);cursor:pointer;font-family:var(--font);font-size:.82rem;font-weight:500;color:var(--ts);white-space:nowrap;transition:var(--tr)}
+.tab-btn.active{background:var(--p);border-color:var(--p);color:#fff}
+.tab-btn:hover:not(.active){border-color:var(--p);color:var(--pd)}
+.book-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.book-card{background:var(--c);border-radius:var(--rmd);overflow:hidden;box-shadow:var(--ss);cursor:pointer;transition:var(--tr);animation:cardIn .3s ease}
+@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.book-card:hover{transform:translateY(-3px);box-shadow:var(--sm)}
+.book-cover-wrap{height:90px;display:flex;align-items:center;justify-content:center;font-size:38px;position:relative}
+.book-tag{position:absolute;top:7px;right:7px;padding:2px 7px;border-radius:9px;font-size:.62rem;font-weight:600}
+.book-tag.reading{background:rgba(74,124,111,.15);color:var(--s)}
+.book-tag.done{background:rgba(76,175,80,.15);color:var(--ok)}
+.book-tag.want{background:rgba(255,179,0,.15);color:var(--wr)}
+.book-body{padding:10px}
+.book-ctitle{font-weight:600;font-size:.85rem;color:var(--t);margin-bottom:2px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.book-cauthor{font-size:.72rem;color:var(--ts);margin-bottom:7px}
+.book-cprog{height:4px;background:rgba(212,165,116,.2);border-radius:2px;overflow:hidden}
+.book-cprog-fill{height:100%;background:linear-gradient(90deg,var(--p),var(--a));border-radius:2px}
+.book-cprog-text{font-size:.65rem;color:var(--tl);margin-top:3px;font-family:monospace}
+.add-card{background:var(--c);border-radius:var(--rmd);border:2px dashed rgba(212,165,116,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px;cursor:pointer;transition:var(--tr);min-height:155px}
+.add-card:hover{border-color:var(--p);background:rgba(212,165,116,.04)}
+.add-card span{font-size:.82rem;color:var(--ts);font-weight:500}
+.add-icon{width:34px;height:34px;border-radius:50%;background:rgba(212,165,116,.15);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--p)}
+.ach-header{text-align:center;padding:20px 0}
+.ach-points{display:inline-flex;align-items:center;gap:7px;padding:7px 18px;background:linear-gradient(135deg,#FFF8E1,#FFECB3);border-radius:20px;font-weight:700;color:var(--wr);font-size:.95rem;margin-bottom:6px;font-family:monospace}
+.ach-title{font-size:1.35rem;font-weight:700;color:var(--t);margin-bottom:3px}
+.ach-sub{font-size:.82rem;color:var(--ts)}
+.ach-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.ach-card{background:var(--c);border-radius:var(--rmd);padding:18px 10px;text-align:center;box-shadow:var(--ss);transition:var(--tr)}
+.ach-card:hover{transform:translateY(-2px);box-shadow:var(--sm)}
+.ach-card.locked{opacity:.45;filter:grayscale(1)}
+.ach-card.unlocked{border:2px solid rgba(255,179,0,.3)}
+.ach-icon{font-size:32px;margin-bottom:9px;display:block}
+.ach-name{font-size:.75rem;font-weight:700;color:var(--t);margin-bottom:3px;line-height:1.3}
+.ach-desc{font-size:.65rem;color:var(--tl);line-height:1.4}
+.stats-hero{background:linear-gradient(135deg,var(--s),var(--sl));border-radius:var(--rlg);padding:24px 20px;color:#fff;margin-bottom:16px;position:relative;overflow:hidden}
+.stats-hero::before{content:'';position:absolute;top:-25px;right:-25px;width:130px;height:130px;background:radial-gradient(circle,rgba(255,255,255,.15) 0%,transparent 70%);border-radius:50%}
+.stats-label{font-size:.78rem;opacity:.85;margin-bottom:6px}
+.stats-val{font-size:2.6rem;font-weight:700;margin-bottom:2px;font-family:monospace}
+.stats-unit{font-size:.95rem;opacity:.85}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.stat-card{background:var(--c);border-radius:var(--rmd);padding:16px;box-shadow:var(--ss)}
+.stat-icon{font-size:20px;margin-bottom:7px}
+.stat-val{font-size:1.5rem;font-weight:700;color:var(--t);font-family:monospace}
+.stat-label{font-size:.72rem;color:var(--ts)}
+.stat-card.warm{background:linear-gradient(135deg,#FFF8F0,#FFF3E6)}
+.stat-card.warm .stat-val{color:var(--pd)}
+.chart-card{background:var(--c);border-radius:var(--rmd);padding:18px;box-shadow:var(--ss);margin-bottom:16px}
+.chart-title{font-size:.95rem;font-weight:700;color:var(--t);margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.bar-chart{display:flex;align-items:flex-end;gap:7px;height:90px}
+.bar-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
+.bar{width:100%;border-radius:4px 4px 0 0;background:linear-gradient(to top,var(--p),var(--al));transition:height .5s ease;min-height:4px}
+.bar.today{background:linear-gradient(to top,var(--a),var(--al))}
+.bar-lbl{font-size:.62rem;color:var(--tl);font-weight:500}
+.bar-val{font-size:.62rem;color:var(--ts);font-family:monospace;height:13px}
+.heat-row{display:flex;gap:4px;align-items:center;margin-bottom:5px}
+.heat-lbl{font-size:.65rem;color:var(--ts);width:18px;flex-shrink:0;font-weight:500}
+.heat-dots{display:flex;gap:3px;flex-wrap:wrap}
+.heat-dot{width:13px;height:13px;border-radius:3px;background:rgba(212,165,116,.15)}
+.heat-dot.done{background:var(--ok)}
+.heat-dot.today{border:2px solid var(--a)}
+.heat-dot.missed{background:rgba(229,91,91,.25)}
+.sg{background:var(--c);border-radius:var(--rmd);overflow:hidden;box-shadow:var(--ss);margin-bottom:14px}
+.sg-title{font-size:.7rem;font-weight:700;color:var(--tl);text-transform:uppercase;letter-spacing:.08em;padding:13px 15px 7px}
+.si{display:flex;align-items:center;gap:12px;padding:13px 15px;cursor:pointer;transition:var(--tr);border-bottom:1px solid rgba(212,165,116,.07)}
+.si:last-child{border-bottom:none}
+.si:hover{background:var(--bg)}
+.si-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.si-icon.b{background:rgba(33,150,243,.12)}
+.si-icon.o{background:rgba(255,179,0,.12)}
+.si-icon.pu{background:rgba(156,39,176,.1)}
+.si-icon.r{background:rgba(229,91,91,.1)}
+.si-text{flex:1}
+.si-title{font-size:.88rem;font-weight:500;color:var(--t)}
+.si-desc{font-size:.73rem;color:var(--ts)}
+.si-arrow{color:var(--tl);font-size:15px}
+.toggle{width:42px;height:23px;border-radius:12px;background:rgba(212,165,116,.25);position:relative;cursor:pointer;transition:var(--tr);flex-shrink:0}
+.toggle.on{background:var(--ok)}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:#fff;transition:var(--tr);box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.toggle.on::after{left:21px}
+.footer-p{text-align:center;font-size:.72rem;color:var(--tl);margin-top:20px;line-height:1.7}
+.dash-header{background:linear-gradient(135deg,var(--s),#3D6B60);border-radius:var(--rlg);padding:22px 20px;color:#fff;margin-bottom:16px;position:relative;overflow:hidden}
+.dash-header::before{content:'';position:absolute;top:-30px;right:-20px;width:160px;height:160px;background:radial-gradient(circle,rgba(255,255,255,.1) 0%,transparent 70%);border-radius:50%}
+.dash-greet{font-size:1.15rem;font-weight:700;margin-bottom:3px}
+.dash-date{font-size:.8rem;opacity:.8;margin-bottom:14px}
+.dash-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dash-item{background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border-radius:12px;padding:13px}
+.dash-val{font-size:1.5rem;font-weight:700;font-family:monospace}
+.dash-lbl{font-size:.72rem;opacity:.85}
+.alert-box{background:linear-gradient(135deg,#FFF3E0,#FFECB3);border-radius:var(--rmd);padding:13px 15px;display:flex;align-items:center;gap:11px;margin-bottom:16px;border-left:4px solid var(--wr)}
+.alert-icon{font-size:20px;flex-shrink:0}
+.alert-text h4{font-size:.82rem;font-weight:700;color:var(--t);margin-bottom:2px}
+.alert-text p{font-size:.75rem;color:var(--ts)}
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sec-title{font-size:.95rem;font-weight:700;color:var(--t)}
+.sec-more{font-size:.8rem;color:var(--p);cursor:pointer;font-weight:500}
+.stu-list{display:flex;flex-direction:column;gap:10px}
+.stu-card{background:var(--c);border-radius:var(--rmd);padding:14px;box-shadow:var(--ss);display:flex;align-items:center;gap:12px;cursor:pointer;transition:var(--tr)}
+.stu-card:hover{box-shadow:var(--sm);transform:translateY(-1px)}
+.stu-avatar{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;font-weight:700;color:#fff}
+.stu-info{flex:1;min-width:0}
+.stu-name{font-weight:600;font-size:.9rem;color:var(--t);margin-bottom:3px}
+.stu-meta{font-size:.75rem;color:var(--ts)}
+.stu-status{padding:5px 11px;border-radius:20px;font-size:.72rem;font-weight:600;flex-shrink:0}
+.stu-status.done{background:rgba(76,175,80,.12);color:var(--ok)}
+.stu-status.pending{background:rgba(255,179,0,.12);color:var(--wr)}
+.stu-status.missed{background:rgba(229,91,91,.1);color:var(--er)}
+.modal-overlay{position:fixed;inset:0;background:rgba(44,36,22,.5);backdrop-filter:blur(4px);z-index:1000;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal-sheet{background:var(--c);border-radius:var(--rlg) var(--rlg) 0 0;padding:26px 22px;padding-bottom:max(26px,env(safe-area-inset-bottom));width:100%;max-width:480px;max-height:85vh;overflow-y:auto;animation:slideUp .3s cubic-bezier(.32,.72,0,1)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:34px;height:4px;background:rgba(44,36,22,.15);border-radius:2px;margin:0 auto 18px}
+.modal-title{font-size:1.2rem;font-weight:700;color:var(--t);margin-bottom:18px;text-align:center}
+.preset-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:18px}
+.preset-item{padding:12px;background:var(--bg);border-radius:var(--rsm);cursor:pointer;transition:var(--tr);border:2px solid transparent}
+.preset-item:hover{border-color:var(--p)}
+.preset-item.selected{border-color:var(--p);background:rgba(212,165,116,.08)}
+.preset-icon{font-size:26px;margin-bottom:7px;display:block}
+.preset-name{font-size:.8rem;font-weight:600;color:var(--t);margin-bottom:2px}
+.preset-author{font-size:.7rem;color:var(--ts)}
+.color-row{display:flex;gap:8px;justify-content:center;margin-bottom:18px;flex-wrap:wrap}
+.color-dot{width:30px;height:30px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:var(--tr)}
+.color-dot.selected{border-color:var(--t);transform:scale(1.15)}
+.color-dot:hover{transform:scale(1.1)}
+.modal-actions{display:flex;gap:10px}
+.modal-btn{flex:1;padding:13px;border-radius:var(--rmd);font-family:var(--font);font-size:.9rem;font-weight:600;cursor:pointer;transition:var(--tr);border:2px solid transparent}
+.modal-btn.canc{background:var(--bg);color:var(--ts);border-color:rgba(212,165,116,.2)}
+.modal-btn.canc:hover{border-color:var(--p);color:var(--pd)}
+.modal-btn.ok{background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;box-shadow:0 4px 12px rgba(212,165,116,.3)}
+.modal-btn.ok:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(212,165,116,.4)}
+.toast{position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--t);color:#fff;padding:11px 22px;border-radius:12px;font-size:.88rem;font-weight:500;z-index:10000;box-shadow:var(--slg);transition:transform .3s cubic-bezier(.32,.72,0,1);white-space:nowrap;display:flex;align-items:center;gap:7px}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.success-overlay{position:fixed;inset:0;background:rgba(44,36,22,.6);backdrop-filter:blur(6px);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px}
+.success-overlay.active{display:flex}
+.success-box{background:#fff;border-radius:var(--rlg);padding:36px 28px;text-align:center;max-width:300px;width:100%;animation:popIn .4s cubic-bezier(.32,.72,0,1)}
+@keyframes popIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+.success-icon{font-size:60px;margin-bottom:14px}
+.success-title{font-size:1.3rem;font-weight:700;color:var(--t);margin-bottom:7px}
+.success-sub{font-size:.85rem;color:var(--ts);line-height:1.6;margin-bottom:20px}
+.success-stats{display:flex;gap:10px;margin-bottom:20px}
+.success-stat{flex:1;background:var(--bg);border-radius:var(--rsm);padding:11px}
+.success-stat-val{font-size:1.2rem;font-weight:700;color:var(--pd);font-family:monospace}
+.success-stat-lbl{font-size:.7rem;color:var(--ts)}
+.success-ok{width:100%;padding:12px;background:linear-gradient(135deg,var(--p),var(--pd));border:none;border-radius:var(--rmd);color:#fff;font-family:var(--font);font-size:.95rem;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(212,165,116,.3);transition:var(--tr)}
+.success-ok:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(212,165,116,.4)}
+.confetti-container{position:fixed;inset:0;pointer-events:none;z-index:9999}
+.confetti-piece{position:absolute;width:9px;height:9px;border-radius:2px;animation:confettiFall 2s ease-out forwards}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+.detail-hero{background:linear-gradient(135deg,#FFF8F0,#FFF3E6);border-radius:var(--rlg);padding:20px;margin-bottom:16px;text-align:center}
+.detail-avatar{width:72px;height:72px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:700;color:#fff}
+.detail-name{font-size:1.2rem;font-weight:700;color:var(--t);margin-bottom:4px}
+.detail-sub{font-size:.82rem;color:var(--ts)}
+</style>
+</head>
+<body>
+<div class="welcome" id="welcomeScreen">
+  <div class="welcome-content">
+    <div class="welcome-icon">📚</div>
+    <h1 class="welcome-title">阅读打卡<span>小助手</span></h1>
+    <p class="welcome-sub">让阅读成为习惯，让成长被看见。<br>选择你的角色，开始今天的阅读吧！</p>
+    <button class="role-btn" onclick="enterApp('student')">
+      <div class="role-icon s">📖</div>
+      <div class="role-text"><h3>我是学生</h3><p>记录阅读、积累成就、养成好习惯</p></div>
+      <div class="role-arrow">→</div>
+    </button>
+    <button class="role-btn" onclick="enterApp('parent')">
+      <div class="role-icon p">👨‍👩‍👧</div>
+      <div class="role-text"><h3>我是家长 / 老师</h3><p>查看打卡情况、掌握阅读进度</p></div>
+      <div class="role-arrow">→</div>
+    </button>
+  </div>
+</div>
+
+<div class="app-shell" id="appShell">
+  <div class="app-header">
+    <div class="role-banner">
+      当前：<span id="roleLabel">学生</span>模式
+      <button class="role-switch-btn" onclick="switchRole()">切换角色</button>
+    </div>
+    <div class="header-row">
+      <button class="back-btn" id="backBtn" onclick="goHome()" style="visibility:hidden">←</button>
+      <div class="header-title" id="headerTitle">阅读打卡</div>
+      <div style="width:34px"></div>
+    </div>
+  </div>
+
+  <!-- Student Pages -->
+  <div class="page active" id="page-today">
+    <div class="page-wrap">
+      <div class="today-hero">
+        <div class="hero-label">✨ 今日阅读</div>
+        <h2 class="hero-greet" id="todayGreet">今天想读什么书？</h2>
+        <p class="hero-date" id="todayDateEl"></p>
+        <div class="streak-badge">
+          <span class="streak-flame" id="streakFlame">🔥</span>
+          <div class="streak-info">
+            <h4 id="streakLabel">连续打卡</h4>
+            <p>坚持阅读，遇见更好的自己</p>
+          </div>
+          <div class="streak-count" id="streakCountEl">0</div>
+        </div>
+      </div>
+      <div class="checkin-card" id="checkinCard">
+        <div class="card-header">
+          <div class="card-icon" id="cardIconEl">📖</div>
+          <div>
+            <div class="card-title">今日打卡</div>
+            <div class="card-sub" id="checkinSubtitle">选择一本书开始阅读吧</div>
+          </div>
+        </div>
+        <div id="checkinNotDone">
+          <div class="book-select" id="currentBookSelect" onclick="goToPage('shelf')">
+            <div class="book-cover" id="bookCoverEl" style="background:#FFE0B2;">📕</div>
+            <div class="book-info">
+              <div class="book-title" id="bookTitleEl">添加一本书</div>
+              <div class="book-author" id="bookAuthorEl">点击选择</div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="bookProgressEl" style="width:0%"></div>
+              </div>
+              <div class="progress-text" id="bookProgressTextEl">0 / 200 页</div>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-field">
+              <label class="form-label">📄 页数</label>
+              <input type="number" class="form-input" id="inPages" placeholder="读了页" min="1">
+            </div>
+            <div class="form-field">
+              <label class="form-label">⏱️ 分钟</label>
+              <input type="number" class="form-input" id="inMinutes" placeholder="读了分钟" min="1">
+            </div>
+            <div class="form-field full">
+              <label class="form-label">💭 心情</label>
+              <div class="mood-row">
+                <button class="mood-btn" data-mood="1" onclick="selectMood(this)">😊</button>
+                <button class="mood-btn selected" data-mood="2" onclick="selectMood(this)">😄</button>
+                <button class="mood-btn" data-mood="3" onclick="selectMood(this)">🤩</button>
+              </div>
+            </div>
+            <div class="form-field full">
+              <label class="form-label">📝 感想（选填）</label>
+              <textarea class="note-input" id="inNote" placeholder="今天的阅读让你想到了什么？"></textarea>
+            </div>
+          </div>
+          <button class="checkin-btn" id="checkinBtn" onclick="doCheckin()">✨ 完成今日打卡</button>
+        </div>
+        <div class="already-done" id="checkinDoneEl" style="display:none;">
+          <div class="already-done-icon">🎉</div>
+          <h3>今日已完成打卡！</h3>
+          <p id="doneInfo">继续保持，明天见！</p>
+        </div>
+      </div>
+      <div class="quick-grid">
+        <div class="quick-card" onclick="goToPage('shelf')">
+          <div class="quick-icon">📚</div>
+          <div class="quick-val" id="qBooks">0</div>
+          <div class="quick-label">在读书籍</div>
+        </div>
+        <div class="quick-card accent" onclick="goToPage('achievements')">
+          <div class="quick-icon">🏆</div>
+          <div class="quick-val" id="qAch">0</div>
+          <div class="quick-label">已获成就</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="page-shelf">
+    <div class="page-wrap">
+      <div class="shelf-tabs">
+        <button class="tab-btn active" onclick="switchShelfTab('reading',this)">📖 在读</button>
+        <button class="tab-btn" onclick="switchShelfTab('done',this)">✅ 已读</button>
+        <button class="tab-btn" onclick="switchShelfTab('want',this)">💭 想读</button>
+      </div>
+      <div class="book-grid" id="bookGrid"></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-achievements">
+    <div class="page-wrap">
+      <div class="ach-header">
+        <div class="ach-points">⭐ <span id="totalPts">0</span> 积分</div>
+        <div class="ach-title">成就徽章墙</div>
+        <div class="ach-sub">已解锁 <span id="unlockedN">0</span> / <span id="totalAchN">0</span> 个成就</div>
+      </div>
+      <div class="ach-grid" id="achGrid"></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-stats">
+    <div class="page-wrap">
+      <div class="stats-hero">
+        <div class="stats-label">本周阅读总时长</div>
+        <div class="stats-val" id="weekMins">0</div>
+        <div class="stats-unit">分钟</div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-icon">📚</div><div class="stat-val" id="sBooks">0</div><div class="stat-label">读完书籍</div></div>
+        <div class="stat-card warm"><div class="stat-icon">📖</div><div class="stat-val" id="sPages">0</div><div class="stat-label">阅读总页数</div></div>
+        <div class="stat-card"><div class="stat-icon">🔥</div><div class="stat-val" id="sStreak">0</div><div class="stat-label">最长连续</div></div>
+        <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-val" id="sDays">0</div><div class="stat-label">打卡总天数</div></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">📊 本周阅读时长（分钟）</div>
+        <div class="bar-chart" id="weeklyChart"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🌡️ 本月打卡热力图</div>
+        <div id="heatContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="page-settings">
+    <div class="page-wrap">
+      <div class="sg">
+        <div class="sg-title">个人信息</div>
+        <div class="si" onclick="showEditName()">
+          <div class="si-icon b">👤</div>
+          <div class="si-text"><div class="si-title" id="stName">小明同学</div><div class="si-desc">点击修改昵称</div></div>
+          <div class="si-arrow">›</div>
+        </div>
+      </div>
+      <div class="sg">
+        <div class="sg-title">提醒设置</div>
+        <div class="si">
+          <div class="si-icon o">🎯</div>
+          <div class="si-text"><div class="si-title">每日阅读目标</div><div class="si-desc">每天 30 分钟</div></div>
+          <div class="si-arrow">›</div>
+        </div>
+        <div class="si">
+          <div class="si-icon pu">🔔</div>
+          <div class="si-text"><div class="si-title">打卡提醒</div><div class="si-desc">每天 20:00</div></div>
+          <div class="toggle on" id="remToggle" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+      <div class="sg">
+        <div class="sg-title">数据</div>
+        <div class="si" onclick="confirmReset()">
+          <div class="si-icon r">🗑️</div>
+          <div class="si-text"><div class="si-title">清除所有数据</div><div class="si-desc">重新开始阅读之旅</div></div>
+          <div class="si-arrow">›</div>
+        </div>
+      </div>
+      <p class="footer-p">📚 阅读打卡小助手 v1.0<br>让阅读成为习惯 ❤️</p>
+    </div>
+  </div>
+
+  <!-- Parent Pages -->
+  <div class="page" id="page-dashboard">
+    <div class="page-wrap">
+      <div class="dash-header">
+        <div class="dash-greet" id="pGreet">家长您好！</div>
+        <div class="dash-date" id="pDate"></div>
+        <div class="dash-row">
+          <div class="dash-item"><div class="dash-val" id="pToday">0/0</div><div class="dash-lbl">今日已打卡</div></div>
+          <div class="dash-item"><div class="dash-val" id="pRate">0%</div><div class="dash-lbl">本周打卡率</div></div>
+        </div>
+      </div>
+      <div class="alert-box" id="alertBox" style="display:none;">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-text"><h4 id="alertT">注意</h4><p id="alertP">有学生今日还未打卡</p></div>
+      </div>
+      <div class="sec-header">
+        <div class="sec-title">👧 学生列表</div>
+        <div class="sec-more" onclick="goToPage('students')">查看全部 →</div>
+      </div>
+      <div class="stu-list" id="stuListDash"></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-students">
+    <div class="page-wrap">
+      <div class="sec-header">
+        <div class="sec-title">👧 全部学生</div>
+        <div class="sec-more" onclick="showAddStudent()">+ 添加学生</div>
+      </div>
+      <div class="stu-list" id="stuListAll"></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-student-detail">
+    <div class="page-wrap" id="stuDetailContent"></div>
+  </div>
+
+  <div class="page" id="page-tasks">
+    <div class="page-wrap">
+      <div class="sec-header"><div class="sec-title">📋 阅读任务设置</div></div>
+      <div class="sg">
+        <div class="si">
+          <div class="si-icon b">📖</div>
+          <div class="si-text"><div class="si-title">每日阅读时长</div><div class="si-desc">建议 30 分钟 / 天</div></div>
+          <div class="si-arrow">›</div>
+        </div>
+        <div class="si">
+          <div class="si-icon o">📚</div>
+          <div class="si-text"><div class="si-title">每周阅读本数</div><div class="si-desc">建议 1 本 / 周</div></div>
+          <div class="si-arrow">›</div>
+        </div>
+      </div>
+      <div class="sec-header" style="margin-top:18px;"><div class="sec-title">🌟 推荐书单</div></div>
+      <div class="book-grid" id="recBooks"></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-parent-settings">
+    <div class="page-wrap">
+      <div class="sg">
+        <div class="sg-title">管理设置</div>
+        <div class="si">
+          <div class="si-icon o">🔔</div>
+          <div class="si-text"><div class="si-title">打卡通知</div><div class="si-desc">有学生打卡时通知我</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="si" onclick="confirmReset()">
+          <div class="si-icon r">🗑️</div>
+          <div class="si-text"><div class="si-title">清除所有数据</div><div class="si-desc">重新开始</div></div>
+          <div class="si-arrow">›</div>
+        </div>
+      </div>
+      <p class="footer-p">📚 阅读打卡小助手 v1.0 · 家长端</p>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav" id="bottomNav">
+    <div id="studentNav" style="display:flex;justify-content:space-around;width:100%;">
+      <button class="nav-item active" onclick="goToPage('today')" id="n-today"><div class="nav-icon">🏠</div><span>首页</span></button>
+      <button class="nav-item" onclick="goToPage('shelf')" id="n-shelf"><div class="nav-icon">📚</div><span>书架</span></button>
+      <button class="nav-item" onclick="goToPage('achievements')" id="n-ach"><div class="nav-icon">🏆</div><span>成就</span></button>
+      <button class="nav-item" onclick="goToPage('stats')" id="n-stats"><div class="nav-icon">📊</div><span>统计</span></button>
+      <button class="nav-item" onclick="goToPage('settings')" id="n-set"><div class="nav-icon">⚙️</div><span>设置</span></button>
+    </div>
+    <div id="parentNav" style="display:none;justify-content:space-around;width:100%;">
+      <button class="nav-item active" onclick="goToPage('dashboard')" id="n-dash"><div class="nav-icon">📊</div><span>概览</span></button>
+      <button class="nav-item" onclick="goToPage('students')" id="n-stus"><div class="nav-icon">👧</div><span>学生</span></button>
+      <button class="nav-item" onclick="goToPage('tasks')" id="n-task"><div class="nav-icon">📋</div><span>任务</span></button>
+      <button class="nav-item" onclick="goToPage('parent-settings')" id="n-pset"><div class="nav-icon">⚙️</div><span>设置</span></button>
+    </div>
+  </nav>
+</div>
+
+<!-- Add Book Modal -->
+<div class="modal-overlay" id="addBookModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📚 添加书籍</div>
+    <div class="preset-grid" id="presetGrid">
+      <div class="preset-item" onclick="pickPreset(this,'红楼梦','曹雪芹','📕','#FFEBEE')">
+        <span class="preset-icon">📕</span><div class="preset-name">红楼梦</div><div class="preset-author">曹雪芹</div>
+      </div>
+      <div class="preset-item" onclick="pickPreset(this,'西游记','吴承恩','📙','#FFF3E0')">
+        <span class="preset-icon">📙</span><div class="preset-name">西游记</div><div class="preset-author">吴承恩</div>
+      </div>
+      <div class="preset-item" onclick="pickPreset(this,'小王子','圣埃克苏佩里','📗','#E8F5E9')">
+        <span class="preset-icon">📗</span><div class="preset-name">小王子</div><div class="preset-author">圣埃克苏佩里</div>
+      </div>
+      <div class="preset-item" onclick="pickPreset(this,'三国演义','罗贯中','📘','#E3F2FD')">
+        <span class="preset-icon">📘</span><div class="preset-name">三国演义</div><div class="preset-author">罗贯中</div>
+      </div>
+    </div>
+    <div class="form-field full" style="margin-bottom:12px;">
+      <label class="form-label">自定义书名</label>
+      <input type="text" class="form-input" id="customTitle" placeholder="或输入书名...">
+    </div>
+    <div class="form-field full" style="margin-bottom:14px;">
+      <label class="form-label">作者</label>
+      <input type="text" class="form-input" id="customAuthor" placeholder="作者名">
+    </div>
+    <div class="form-field full" style="margin-bottom:18px;">
+      <label class="form-label">封面颜色</label>
+      <div class="color-row" id="colorRow">
+        <div class="color-dot selected" style="background:#FFEBEE" onclick="pickColor(this,'#FFEBEE')"></div>
+        <div class="color-dot" style="background:#FFF3E0" onclick="pickColor(this,'#FFF3E0')"></div>
+        <div class="color-dot" style="background:#E8F5E9" onclick="pickColor(this,'#E8F5E9')"></div>
+        <div class="color-dot" style="background:#E3F2FD" onclick="pickColor(this,'#E3F2FD')"></div>
+        <div class="color-dot" style="background:#F3E5F5" onclick="pickColor(this,'#F3E5F5')"></div>
+        <div class="color-dot" style="background:#EDE7F6" onclick="pickColor(this,'#EDE7F6')"></div>
+      </div>
+    </div>
+    <div class="form-field full" style="margin-bottom:18px;">
+      <label class="form-label">总页数</label>
+      <input type="number" class="form-input" id="customPages" placeholder="输入总页数" value="200">
+    </div>
+    <div class="form-field full" style="margin-bottom:18px;">
+      <label class="form-label">状态</label>
+      <div class="shelf-tabs" style="margin-bottom:0">
+        <button class="tab-btn active" id="tab-reading" onclick="setBookStatus('reading',this)">📖 在读</button>
+        <button class="tab-btn" id="tab-done" onclick="setBookStatus('done',this)">✅ 已读</button>
+        <button class="tab-btn" id="tab-want" onclick="setBookStatus('want',this)">💭 想读</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn canc" onclick="closeModal('addBookModal')">取消</button>
+      <button class="modal-btn ok" onclick="confirmAddBook()">添加书籍</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Student Modal -->
+<div class="modal-overlay" id="addStuModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">👧 添加学生</div>
+    <div class="form-field full" style="margin-bottom:18px;">
+      <label class="form-label">学生姓名</label>
+      <input type="text" class="form-input" id="stuNameIn" placeholder="输入学生姓名">
+    </div>
+    <div class="form-field full" style="margin-bottom:18px;">
+      <label class="form-label">选择头像颜色</label>
+      <div class="color-row" id="stuColorRow">
+        <div class="color-dot selected" style="background:#FF7043;border-color:transparent" onclick="pickStuColor(this,'#FF7043')"></div>
+        <div class="color-dot" style="background:#42A5F5" onclick="pickStuColor(this,'#42A5F5')"></div>
+        <div class="color-dot" style="background:#66BB6A" onclick="pickStuColor(this,'#66BB6A')"></div>
+        <div class="color-dot" style="background:#AB47BC" onclick="pickStuColor(this,'#AB47BC')"></div>
+        <div class="color-dot" style="background:#FFA726" onclick="pickStuColor(this,'#FFA726')"></div>
+        <div class="color-dot" style="background:#26C6DA" onclick="pickStuColor(this,'#26C6DA')"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn canc" onclick="closeModal('addStuModal')">取消</button>
+      <button class="modal-btn ok" onclick="confirmAddStudent()">添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div class="success-overlay" id="successModal">
+  <div class="success-box">
+    <div class="success-icon">🎉</div>
+    <div class="success-title">打卡成功！</div>
+    <div class="success-sub">太棒了！继续保持哦～</div>
+    <div class="success-stats">
+      <div class="success-stat"><div class="success-stat-val" id="succPages">0</div><div class="success-stat-lbl">页</div></div>
+      <div class="success-stat"><div class="success-stat-val" id="succMins">0</div><div class="success-stat-lbl">分钟</div></div>
+      <div class="success-stat"><div class="success-stat-val" id="succStreak">0</div><div class="success-stat-lbl">连续天</div></div>
+    </div>
+    <button class="success-ok" onclick="closeSuccess()">继续阅读 📚</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><span id="toastMsg">提示</span></div>
+
+<!-- Confetti -->
+<div class="confetti-container" id="confettiContainer"></div>
+
+<script>
+// ===== STATE & DATA =====
+const MOODS = {1:'😊',2:'😄',3:'🤩'};
+let currentRole = localStorage.getItem('role') || null;
+let selectedMood = 2;
+let currentShelfTab = 'reading';
+let addBookStatus = 'reading';
+let selectedColor = '#FFEBEE';
+let selectedPreset = null;
+let stuColor = '#FF7043';
+let selectedStudentId = null;
+
+const ACHIEVEMENTS = [
+  {id:'first',icon:'🌱',name:'初次打卡',desc:'完成第一次打卡',cond:d=>d.checkins>=1,pts:10},
+  {id:'week3',icon:'📅',name:'坚持3天',desc:'连续打卡3天',cond:d=>d.streak>=3,pts:30},
+  {id:'week7',icon:'🔥',name:'坚持一周',desc:'连续打卡7天',cond:d=>d.streak>=7,pts:70},
+  {id:'month',icon:'🏆',name:'满月战士',desc:'连续打卡30天',cond:d=>d.streak>=30,pts:300},
+  {id:'book1',icon:'📚',name:'读完一本',desc:'读完第一本书',cond:d=>d.doneBooks>=1,pts:50},
+  {id:'book3',icon:'📖',name:'阅读达人',desc:'读完3本书',cond:d=>d.doneBooks>=3,pts:150},
+  {id:'pages100',icon:'📄',name:'阅读新星',desc:'累计阅读100页',cond:d=>d.totalPages>=100,pts:20},
+  {id:'pages500',icon:'📜',name:'阅读高手',desc:'累计阅读500页',cond:d=>d.totalPages>=500,pts:100},
+  {id:'pages1k',icon:'📃',name:'阅读王者',desc:'累计阅读1000页',cond:d=>d.totalPages>=1000,pts:200},
+  {id:'mins100',icon:'⏰',name:'时间旅人',desc:'累计阅读100分钟',cond:d=>d.totalMins>=100,pts:20},
+  {id:'note',icon:'✍️',name:'笔记达人',desc:'写了阅读感想',cond:d=>d.hasNote,pts:10},
+];
+
+const SAMPLE_STUDENTS = [
+  {id:'s1',name:'王小明',color:'#FF7043',checkins:[
+    {date:'2026-03-18',pages:20,mins:30,mood:2},{date:'2026-03-19',pages:15,mins:25,mood:2},
+    {date:'2026-03-20',pages:25,mins:40,mood:3},{date:'2026-03-21',pages:18,mins:30,mood:2},
+    {date:'2026-03-22',pages:30,mins:45,mood:3},{date:'2026-03-23',pages:20,mins:35,mood:2},
+  ]},
+  {id:'s2',name:'李雨涵',color:'#42A5F5',checkins:[
+    {date:'2026-03-18',pages:30,mins:45,mood:3},{date:'2026-03-19',pages:25,mins:40,mood:2},
+    {date:'2026-03-20',pages:35,mins:50,mood:3},{date:'2026-03-21',pages:20,mins:30,mood:2},
+    {date:'2026-03-22',pages:28,mins:40,mood:3},{date:'2026-03-23',pages:22,mins:35,mood:2},
+  ]},
+  {id:'s3',name:'张伟',color:'#66BB6A',checkins:[
+    {date:'2026-03-18',pages:15,mins:20,mood:1},{date:'2026-03-19',pages:18,mins:25,mood:2},
+    {date:'2026-03-21',pages:20,mins:30,mood:2},{date:'2026-03-22',pages:15,mins:20,mood:1},
+    {date:'2026-03-23',pages:25,mins:35,mood:2},
+  ]},
+  {id:'s4',name:'陈思琪',color:'#AB47BC',checkins:[
+    {date:'2026-03-20',pages:30,mins:50,mood:3},{date:'2026-03-21',pages:25,mins:40,mood:2},
+    {date:'2026-03-22',pages:35,mins:55,mood:3},{date:'2026-03-23',pages:28,mins:45,mood:3},
+  ]},
+];
+
+function getDefaults() {
+  return {
+    name:'小明同学',
+    books:[
+      {id:'b1',title:'西游记',author:'吴承恩',emoji:'📙',color:'#FFF3E0',totalPages:320,readPages:85,status:'reading'},
+      {id:'b2',title:'小王子',author:'圣埃克苏佩里',emoji:'📗',color:'#E8F5E9',totalPages:96,readPages:96,status:'done',endDate:'2026-03-15'},
+      {id:'b3',title:'红楼梦',author:'曹雪芹',emoji:'📕',color:'#FFEBEE',totalPages:400,readPages:0,status:'want'},
+      {id:'b4',title:'哈利波特',author:'J.K.罗琳',emoji:'🪄',color:'#EDE7F6',totalPages:223,readPages:60,status:'reading'},
+    ],
+    checkins:[
+      {date:'2026-03-18',pages:20,mins:30,mood:2,bookId:'b1',note:'悟空三打白骨精好精彩！'},
+      {date:'2026-03-19',pages:15,mins:25,mood:2,bookId:'b1'},
+      {date:'2026-03-20',pages:25,mins:40,mood:3,bookId:'b1',note:'今天读到了三借芭蕉扇'},
+      {date:'2026-03-21',pages:18,mins:30,mood:2,bookId:'b1'},
+      {date:'2026-03-22',pages:30,mins:45,mood:3,bookId:'b1'},
+      {date:'2026-03-23',pages:20,mins:35,mood:2,bookId:'b1'},
+    ],
+    currentBookId:'b1',reminder:true,
+  };
+}
+
+function loadData(){try{const d=localStorage.getItem('readingTracker');return d?JSON.parse(d):null;}catch(e){return null;}}
+function saveData(data){localStorage.setItem('readingTracker',JSON.stringify(data));}
+function getToday(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function getStreak(checkins){let streak=0;const d=new Date();for(let i=0;i<90;i++){const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');if(checkins.find(c=>c.date===ds)){streak++;}else if(i>0)break;d.setDate(d.getDate()-1);}return streak;}
+function calcStats(){const data=loadData()||getDefaults();const doneBooks=data.books.filter(b=>b.status==='done').length;const totalPages=data.checkins.reduce((s,c)=>s+(c.pages||0),0);const totalMins=data.checkins.reduce((s,c)=>s+(c.mins||0),0);const streak=getStreak(data.checkins);const hasNote=data.checkins.some(c=>c.note&&c.note.trim());const d={checkins:data.checkins.length,streak,doneBooks,totalPages,totalMins,hasNote};const unlocked=ACHIEVEMENTS.filter(a=>a.cond(d));return{...d,unlocked,points:unlocked.reduce((s,a)=>s+a.pts,0)};}
+function getStudentData(){try{const d=localStorage.getItem('readingTrackerStudents');return d?JSON.parse(d):{students:JSON.parse(JSON.stringify(SAMPLE_STUDENTS))};}catch(e){return{students:JSON.parse(JSON.stringify(SAMPLE_STUDENTS))};}}
+function saveStudentData(data){localStorage.setItem('readingTrackerStudents',JSON.stringify(data));}
+function makeWeekDates(){return[...Array(7)].map((_,i)=>{const dt=new Date();dt.setDate(dt.getDate()-6+i);return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');});}
+
+function enterApp(role){currentRole=role;localStorage.setItem('role',role);document.getElementById('welcomeScreen').classList.add('hidden');document.getElementById('appShell').classList.add('active');document.getElementById('roleLabel').textContent=role==='student'?'学生':'家长/老师';document.getElementById('studentNav').style.display=role==='student'?'flex':'none';document.getElementById('parentNav').style.display=role==='parent'?'flex':'none';if(role==='student')goToPage('today');else goToPage('dashboard');}
+function switchRole(){enterApp(currentRole==='student'?'parent':'student');}
+function goHome(){if(currentRole==='student')goToPage('today');else goToPage('dashboard');document.getElementById('backBtn').style.visibility='hidden';}
+
+const PAGE_TITLES={today:'阅读打卡',shelf:'我的书架',achievements:'成就徽章',stats:'阅读统计',settings:'设置',dashboard:'概览',students:'学生列表','student-detail':'学生详情',tasks:'阅读任务','parent-settings':'设置'};
+
+function goToPage(pageId){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const page=document.getElementById('page-'+pageId);
+  if(page)page.classList.add('active');
+  document.getElementById('headerTitle').textContent=PAGE_TITLES[pageId]||'阅读打卡';
+  document.getElementById('backBtn').style.visibility=pageId==='student-detail'?'visible':'hidden';
+  const navMap={today:'n-today',shelf:'n-shelf',achievements:'n-ach',stats:'n-stats',settings:'n-set',dashboard:'n-dash',students:'n-stus',tasks:'n-task','parent-settings':'n-pset'};
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const navEl=document.getElementById(navMap[pageId]);
+  if(navEl)navEl.classList.add('active');
+  if(currentRole==='student'){
+    if(pageId==='today')renderToday();
+    else if(pageId==='shelf')renderShelf();
+    else if(pageId==='achievements')renderAchievements();
+    else if(pageId==='stats')renderStats();
+    else if(pageId==='settings')renderSettings();
+  }else{
+    if(pageId==='dashboard')renderDashboard();
+    else if(pageId==='students')renderStudents();
+    else if(pageId==='student-detail')renderStudentDetail();
+    else if(pageId==='tasks')renderTasks();
+  }
+}
+
+function renderToday(){
+  const data=loadData()||getDefaults();const today=getToday();const checked=data.checkins.find(c=>c.date===today);const streak=getStreak(data.checkins);
+  const h=new Date().getHours();const greet=h<12?'上午好，':(h<18?'下午好，':'晚上好，');
+  document.getElementById('todayGreet').textContent=greet+(data.name||'同学')+'！';
+  document.getElementById('todayDateEl').textContent=new Date().toLocaleDateString('zh-CN',{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('streakCountEl').textContent=streak;
+  document.getElementById('streakFlame').textContent=streak>0?'🔥':'💤';
+  document.getElementById('streakLabel').textContent=streak>0?'连续'+streak+'天':'还未开始';
+  const stats=calcStats();
+  document.getElementById('qBooks').textContent=data.books.filter(b=>b.status==='reading').length;
+  document.getElementById('qAch').textContent=stats.unlocked.length;
+  const book=data.books.find(b=>b.id===data.currentBookId)||data.books.find(b=>b.status==='reading')||data.books[0];
+  if(book){
+    document.getElementById('bookCoverEl').textContent=book.emoji;
+    document.getElementById('bookCoverEl').style.background=book.color;
+    document.getElementById('bookTitleEl').textContent=book.title;
+    document.getElementById('bookAuthorEl').textContent=book.author;
+    const pct=Math.round((book.readPages/book.totalPages)*100);
+    document.getElementById('bookProgressEl').style.width=pct+'%';
+    document.getElementById('bookProgressTextEl').textContent=book.readPages+' / '+book.totalPages+' 页';
+    document.getElementById('checkinSubtitle').textContent='正在读：'+book.title;
+  }
+  if(checked){
+    document.getElementById('checkinNotDone').style.display='none';
+    document.getElementById('checkinDoneEl').style.display='block';
+    document.getElementById('cardIconEl').textContent='✅';
+    document.getElementById('doneInfo').textContent='今日已读 '+checked.pages+' 页，'+checked.mins+' 分钟 '+MOODS[checked.mood];
+  }else{
+    document.getElementById('checkinNotDone').style.display='block';
+    document.getElementById('checkinDoneEl').style.display='none';
+    document.getElementById('cardIconEl').textContent='📖';
+  }
+}
+
+function selectMood(btn){document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');selectedMood=parseInt(btn.dataset.mood);}
+
+function doCheckin(){
+  const pages=parseInt(document.getElementById('inPages').value)||0;
+  const mins=parseInt(document.getElementById('inMinutes').value)||0;
+  const note=document.getElementById('inNote').value.trim();
+  if(pages<=0&&mins<=0){showToast('请输入阅读页数或时长 📖');return;}
+  const data=loadData()||getDefaults();const today=getToday();
+  const book=data.books.find(b=>b.id===data.currentBookId)||data.books.find(b=>b.status==='reading');
+  data.checkins.push({date:today,pages,mins,mood:selectedMood,bookId:book?.id,note});
+  if(book){
+    book.readPages=Math.min(book.totalPages,(book.readPages||0)+pages);
+    if(book.readPages>=book.totalPages&&book.status==='reading'){book.status='done';book.endDate=today;}
+  }
+  saveData(data);renderToday();
+  const streak=getStreak(data.checkins);
+  document.getElementById('succPages').textContent=pages;
+  document.getElementById('succMins').textContent=mins;
+  document.getElementById('succStreak').textContent=streak;
+  document.getElementById('successModal').classList.add('active');
+  spawnConfetti();
+}
+
+function closeSuccess(){document.getElementById('successModal').classList.remove('active');document.getElementById('inPages').value='';document.getElementById('inMinutes').value='';document.getElementById('inNote').value='';}
+
+function spawnConfetti(){
+  const container=document.getElementById('confettiContainer');container.innerHTML='';
+  const colors=['#D4A574','#E8845F','#4A7C6F','#FFB300','#FF6B6B','#4ECDC4','#A8E6CF'];
+  for(let i=0;i<60;i++){const p=document.createElement('div');p.className='confetti-piece';p.style.left=Math.random()*100+'%';p.style.top='-10px';p.style.background=colors[Math.floor(Math.random()*colors.length)];p.style.animationDelay=Math.random()*0.8+'s';p.style.animationDuration=(1.5+Math.random())+'s';container.appendChild(p);}
+  setTimeout(()=>{container.innerHTML='';},3000);
+}
+
+function renderShelf(){
+  const data=loadData()||getDefaults();const books=data.books.filter(b=>b.status===currentShelfTab);const grid=document.getElementById('bookGrid');grid.innerHTML='';
+  const tagMap={reading:'在读',done:'已读',want:'想读'};
+  books.forEach(book=>{
+    const pct=Math.round((book.readPages/book.totalPages)*100);
+    const prog=book.status==='want'?'':'<div class="book-cprog"><div class="book-cprog-fill" style="width:'+pct+'%"></div></div><div class="book-cprog-text">'+book.readPages+'/'+book.totalPages+'页</div>';
+    grid.innerHTML+='<div class="book-card" onclick="selectCurrentBook(\''+book.id+'\')"><div class="book-cover-wrap" style="background:'+book.color+'">'+book.emoji+'<div class="book-tag '+book.status+'">'+tagMap[book.status]+'</div></div><div class="book-body"><div class="book-ctitle">'+book.title+'</div><div class="book-cauthor">'+book.author+'</div>'+prog+'</div></div>';
+  });
+  if(currentShelfTab!=='done')grid.innerHTML+='<div class="add-card" onclick="openModal(\'addBookModal\')"><div class="add-icon">+</div><span>添加书籍</span></div>';
+}
+
+function switchShelfTab(tab,btn){currentShelfTab=tab;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderShelf();}
+function selectCurrentBook(bookId){const data=loadData()||getDefaults();data.currentBookId=bookId;saveData(data);const book=data.books.find(b=>b.id===bookId);showToast('已选择《'+(book?.title||'')+'》');goToPage('today');}
+
+function pickPreset(el,title,author,emoji,color){document.querySelectorAll('.preset-item').forEach(p=>p.classList.remove('selected'));el.classList.add('selected');selectedPreset={title,author,emoji,color};document.getElementById('customTitle').value=title;document.getElementById('customAuthor').value=author;selectedColor=color;document.querySelectorAll('#colorRow .color-dot').forEach(d=>d.classList.remove('selected'));}
+function pickColor(el,color){document.querySelectorAll('#colorRow .color-dot').forEach(d=>d.classList.remove('selected'));el.classList.add('selected');selectedColor=color;}
+function setBookStatus(status,btn){addBookStatus=status;document.querySelectorAll('[id^="tab-"]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+
+function confirmAddBook(){
+  const title=document.getElementById('customTitle').value.trim();const author=document.getElementById('customAuthor').value.trim();const pages=parseInt(document.getElementById('customPages').value)||200;
+  if(!title){showToast('请输入书名 📖');return;}
+  const data=loadData()||getDefaults();const emojis=['📕','📙','📗','📘','📓','🪄','📒','📔'];
+  const book={id:'b'+Date.now(),title,author:author||'未知作者',emoji:selectedPreset?.emoji||emojis[Math.floor(Math.random()*emojis.length)],color:selectedColor,totalPages:pages,readPages:addBookStatus==='done'?pages:0,status:addBookStatus,endDate:addBookStatus==='done'?getToday():null};
+  data.books.push(book);if(addBookStatus==='reading')data.currentBookId=book.id;saveData(data);closeModal('addBookModal');renderShelf();showToast('《'+title+'》已添加 📚');
+  document.getElementById('customTitle').value='';document.getElementById('customAuthor').value='';document.getElementById('customPages').value='200';document.querySelectorAll('.preset-item').forEach(p=>p.classList.remove('selected'));selectedPreset=null;
+}
+
+function renderAchievements(){
+  const stats=calcStats();document.getElementById('totalPts').textContent=stats.points;document.getElementById('unlockedN').textContent=stats.unlocked.length;document.getElementById('totalAchN').textContent=ACHIEVEMENTS.length;
+  const grid=document.getElementById('achGrid');grid.innerHTML='';
+  ACHIEVEMENTS.forEach(a=>{const unlocked=stats.unlocked.some(u=>u.id===a.id);grid.innerHTML+='<div class="ach-card '+(unlocked?'unlocked':'locked')+'"><span class="ach-icon">'+(unlocked?a.icon:'🔒')+'</span><div class="ach-name">'+a.name+'</div><div class="ach-desc">'+a.desc+'</div></div>';});
+}
+
+function renderStats(){
+  const data=loadData()||getDefaults();const stats=calcStats();const today=getToday();
+  document.getElementById('weekMins').textContent=stats.totalMins;document.getElementById('sBooks').textContent=data.books.filter(b=>b.status==='done').length;document.getElementById('sPages').textContent=stats.totalPages;document.getElementById('sStreak').textContent=stats.streak;document.getElementById('sDays').textContent=stats.checkins;
+  const days=['一','二','三','四','五','六','日'];const d=new Date();d.setDate(d.getDate()-6);const weekData=[];let maxMins=1;
+  for(let i=0;i<7;i++){const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');const mins=data.checkins.filter(c=>c.date===ds).reduce((s,c)=>s+(c.mins||0),0);weekData.push({day:days[d.getDay()===0?6:d.getDay()-1],mins,date:ds});if(mins>maxMins)maxMins=mins;d.setDate(d.getDate()+1);}
+  const chart=document.getElementById('weeklyChart');chart.innerHTML='';
+  weekData.forEach(w=>{const h=w.mins>0?Math.max(8,Math.round((w.mins/maxMins)*80)):4;chart.innerHTML+='<div class="bar-item"><div class="bar-val">'+(w.mins||'')+'</div><div class="bar '+(w.date===today?'today':'')+'" style="height:'+h+'px"></div><div class="bar-lbl">周'+w.day+'</div></div>';});
+  const heat=document.getElementById('heatContainer');heat.innerHTML='';const checkinSet=new Set(data.checkins.map(c=>c.date));const wl=['','一','二','三','四','五','六','日'];
+  for(let w=0;w<4;w++){let row='<div class="heat-row"><div class="heat-lbl">周'+wl[w+1]+'</div><div class="heat-dots">';for(let d2=0;d2<7;d2++){const dt=new Date();dt.setDate(dt.getDate()-27+w*7+d2);const ds=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');const done=checkinSet.has(ds);const missed=!done&&ds<today;let cls='heat-dot';if(done)cls+=' done';if(ds===today)cls+=' today';else if(missed)cls+=' missed';row+='<div class="'+cls+'"></div>';}row+='</div></div>';heat.innerHTML+=row;}
+}
+
+function renderSettings(){const data=loadData()||getDefaults();document.getElementById('stName').textContent=data.name||'小明同学';}
+function showEditName(){const data=loadData()||getDefaults();const name=prompt('请输入昵称：',data.name||'');if(name&&name.trim()){data.name=name.trim();saveData(data);renderSettings();showToast('昵称已更新 ✨');}}
+function confirmReset(){if(confirm('确定要清除所有数据吗？此操作不可恢复！')){localStorage.removeItem('readingTracker');localStorage.removeItem('readingTrackerStudents');localStorage.removeItem('role');location.reload();}}
+
+function renderDashboard(){
+  const sd=getStudentData();const today=getToday();const checked=sd.students.filter(s=>s.checkins.some(c=>c.date===today)).length;const total=sd.students.length;
+  document.getElementById('pGreet').textContent='家长您好！';document.getElementById('pDate').textContent=new Date().toLocaleDateString('zh-CN',{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('pToday').textContent=checked+'/'+total;document.getElementById('pRate').textContent=Math.round((checked/total)*100)+'%';
+  const missed=sd.students.filter(s=>!s.checkins.some(c=>c.date===today));
+  if(missed.length>0){document.getElementById('alertBox').style.display='flex';document.getElementById('alertT').textContent='⚠️ 今日待打卡';document.getElementById('alertP').textContent=missed.map(s=>s.name).join('、')+' 今日还未打卡';}
+  else document.getElementById('alertBox').style.display='none';
+  const list=document.getElementById('stuListDash');list.innerHTML='';
+  sd.students.slice(0,3).forEach(s=>{const sdone=s.checkins.some(c=>c.date===today);const streak=makeWeekDates().filter(d=>s.checkins.some(c=>c.date===d)).length;list.innerHTML+=studentCardHTML(s,sdone,streak,today);});
+}
+
+function renderStudents(){const sd=getStudentData();const today=getToday();const list=document.getElementById('stuListAll');list.innerHTML='';sd.students.forEach(s=>{const sdone=s.checkins.some(c=>c.date===today);const streak=makeWeekDates().filter(d=>s.checkins.some(c=>c.date===d)).length;list.innerHTML+=studentCardHTML(s,sdone,streak,today);});}
+function studentCardHTML(s,done,streak,today){const status=done?'done':'pending';const statusText=done?'已打卡':'待打卡';return'<div class="stu-card" onclick="showStudentDetail(\''+s.id+'\')"><div class="stu-avatar" style="background:'+s.color+'">'+s.name.slice(0,1)+'</div><div class="stu-info"><div class="stu-name">'+s.name+'</div><div class="stu-meta">本周 '+streak+'/7 天 · '+s.checkins.length+' 次打卡</div></div><div class="stu-status '+status+'">'+statusText+'</div></div>';}
+function showStudentDetail(id){selectedStudentId=id;goToPage('student-detail');}
+
+function renderStudentDetail(){
+  const sd=getStudentData();const s=sd.students.find(st=>st.id===selectedStudentId);if(!s){goToPage('students');return;}
+  const today=getToday();const last7=makeWeekDates();const streak=last7.filter(d=>s.checkins.some(c=>c.date===d)).length;
+  const totalPages=s.checkins.reduce((a,c)=>a+(c.pages||0),0);const totalMins=s.checkins.reduce((a,c)=>a+(c.mins||0),0);
+  const bars=last7.map(d=>{const c=s.checkins.find(sc=>sc.date===d);const mins=c?.mins||0;const h=mins>0?Math.max(6,Math.round((mins/60)*80)):4;return'<div class="bar-item"><div class="bar-val">'+(mins||'')+'</div><div class="bar '+(d===today?'today':'')+'" style="height:'+h+'px"></div><div class="bar-lbl">'+d.slice(5)+'</div></div>';}).join('');
+  document.getElementById('stuDetailContent').innerHTML='<div class="detail-hero"><div class="detail-avatar" style="background:'+s.color+'">'+s.name.slice(0,1)+'</div><div class="detail-name">'+s.name+'</div><div class="detail-sub">本周打卡 '+streak+'/7 天</div></div><div class="stats-grid"><div class="stat-card"><div class="stat-icon">📖</div><div class="stat-val">'+s.checkins.length+'</div><div class="stat-label">总打卡次数</div></div><div class="stat-card warm"><div class="stat-icon">📄</div><div class="stat-val">'+totalPages+'</div><div class="stat-label">累计页数</div></div><div class="stat-card"><div class="stat-icon">⏰</div><div class="stat-val">'+totalMins+'</div><div class="stat-label">累计分钟</div></div><div class="stat-card"><div class="stat-icon">🔥</div><div class="stat-val">'+streak+'</div><div class="stat-label">本周连续</div></div></div><div class="chart-card"><div class="chart-title">📊 本周阅读情况</div><div class="bar-chart">'+bars+'</div></div>';
+}
+
+function renderTasks(){const grid=document.getElementById('recBooks');const recs=[{title:'十万个为什么',author:'青少年科普系列',emoji:'📘',color:'#E3F2FD'},{title:'小王子',author:'安托万·德·圣-埃克苏佩里',emoji:'📗',color:'#F3E5F5'},{title:'夏洛的网',author:'E.B.怀特',emoji:'📙',color:'#E8F5E9'},{title:'窗边的小豆豆',author:'黑柳彻子',emoji:'📓',color:'#FFF3E0'}];grid.innerHTML=recs.map(r=>'<div class="book-card" onclick="showToast(\'已推荐给学生们 📖\')"><div class="book-cover-wrap" style="background:'+r.color+'">'+r.emoji+'</div><div class="book-body"><div class="book-ctitle">'+r.title+'</div><div class="book-cauthor">'+r.author+'</div></div></div>').join('');}
+
+function showAddStudent(){openModal('addStuModal');}
+function pickStuColor(el,color){document.querySelectorAll('#stuColorRow .color-dot').forEach(d=>{d.style.borderColor='transparent';d.classList.remove('selected');});el.classList.add('selected');el.style.borderColor='var(--t)';stuColor=color;}
+function confirmAddStudent(){const name=document.getElementById('stuNameIn').value.trim();if(!name){showToast('请输入学生姓名 👧');return;}const sd=getStudentData();sd.students.push({id:'s'+Date.now(),name,color:stuColor,checkins:[]});saveStudentData(sd);closeModal('addStuModal');renderStudents();showToast(name+' 已添加 👧');document.getElementById('stuNameIn').value='';}
+
+function openModal(id){document.getElementById(id).classList.add('active');}
+function closeModal(id){document.getElementById(id).classList.remove('active');}
+function showToast(msg){const toast=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2500);}
+document.addEventListener('click',function(e){if(e.target.classList.contains('modal-overlay'))e.target.classList.remove('active');});
+</script>
+</body>
+</html>

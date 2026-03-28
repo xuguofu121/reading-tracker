@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>📚 小小阅读家 - 阅读追踪器 v2.0</title>
+<style>
+:root{--p:#D4A574;--pd:#B8895A;--s:#4A7C6F;--sl:#5E9E8A;--a:#E8845F;--al:#F0A080;--bg:#FDF8F3;--c:#fff;--t:#2C2416;--ts:#7A6F5D;--tl:#A89880;--ok:#4CAF50;--wr:#FFB300;--er:#E55B5B;--ss:0 2px 8px rgba(44,36,22,.06);--sm:0 4px 20px rgba(44,36,22,.10);--slg:0 8px 40px rgba(44,36,22,.14);--rsm:8px;--rmd:16px;--rlg:24px;--font:system-ui,sans-serif;--tr:all .3s cubic-bezier(.4,0,.2,1);}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--t);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--p);border-radius:2px}
+.app{display:flex;flex-direction:column;min-height:100vh}
+.header{background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;padding:16px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.header h1{font-size:1.4rem;font-weight:700;margin-bottom:4px}
+.header .version{font-size:.75rem;opacity:.85}
+.stats-bar{display:flex;justify-content:space-around;padding:12px 0;background:#fff;border-bottom:1px solid rgba(212,165,116,.15);box-shadow:0 2px 4px rgba(0,0,0,.04)}
+.stat-item{text-align:center;flex:1}
+.stat-val{font-size:1.3rem;font-weight:800;color:var(--p);font-family:monospace}
+.stat-label{font-size:.65rem;color:var(--ts);margin-top:2px;text-transform:uppercase}
+.tabs{display:flex;background:#fff;border-bottom:2px solid rgba(212,165,116,.15);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab-btn{flex:1;min-width:70px;padding:12px 8px;background:none;border:none;font-size:.82rem;font-weight:600;color:var(--ts);cursor:pointer;position:relative;transition:var(--tr);white-space:nowrap}
+.tab-btn.active{color:var(--p)}
+.tab-btn.active::after{content:'';position:absolute;bottom:-2px;left:15%;right:15%;height:3px;background:var(--p);border-radius:2px}
+.content{flex:1;padding:14px;padding-bottom:70px;max-width:600px;margin:0 auto;width:100%;overflow-y:auto}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.card{background:#fff;border-radius:var(--rmd);padding:16px;margin-bottom:12px;box-shadow:var(--ss);border:1px solid rgba(212,165,116,.1)}
+.card-title{font-size:.95rem;font-weight:700;color:var(--t);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card-title .icon{font-size:1.1rem}
+.checkin-card{background:linear-gradient(135deg,var(--s),var(--sl));color:#fff;border-radius:var(--rmd);padding:20px;text-align:center;margin-bottom:12px;box-shadow:0 6px 16px rgba(74,124,111,.25)}
+.checkin-card h3{font-size:1rem;margin-bottom:4px}
+.streak-num{font-size:2.8rem;font-weight:900;line-height:1;margin:8px 0}
+.streak-flames{font-size:1.2rem;margin:4px 0}
+.checkin-btn{background:var(--a);color:#fff;border:none;padding:12px 28px;border-radius:50px;font-size:1rem;font-weight:700;cursor:pointer;margin-top:12px;box-shadow:0 4px 12px rgba(232,132,95,.3);transition:var(--tr);font-family:inherit}
+.checkin-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(232,132,95,.4)}
+.checkin-btn.done{background:var(--ok);cursor:default}
+.checkin-btn:disabled{background:#aaa;cursor:not-allowed}
+.badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:12px}
+.badge-card{background:var(--bg);border-radius:12px;padding:14px 10px;text-align:center;border:2px solid rgba(212,165,116,.2);transition:var(--tr)}
+.badge-card.earned{border-color:var(--wr);background:linear-gradient(135deg,#FFFDF5,#FFF8E0);box-shadow:0 3px 10px rgba(255,179,0,.15)}
+.badge-card.locked{opacity:.4;filter:grayscale(.6)}
+.badge-emoji{font-size:2rem;margin-bottom:6px;display:block}
+.badge-name{font-size:.75rem;font-weight:700;color:var(--t)}
+.badge-req{font-size:.65rem;color:var(--ts);margin-top:2px}
+.badge-pts{font-size:.7rem;color:var(--wr);font-weight:600;margin-top:2px}
+.points-display{background:linear-gradient(135deg,var(--wr),#FFC107);color:#fff;border-radius:var(--rmd);padding:18px;text-align:center;margin-bottom:12px;box-shadow:0 6px 16px rgba(255,179,0,.25)}
+.points-num{font-size:2.6rem;font-weight:900;line-height:1;font-family:monospace}
+.points-label{font-size:.8rem;opacity:.9;margin-top:4px}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.shop-item{background:#fff;border-radius:12px;padding:14px;text-align:center;border:2px solid rgba(212,165,116,.2);cursor:pointer;transition:var(--tr)}
+.shop-item:hover{border-color:var(--p);transform:translateY(-2px);box-shadow:var(--sm)}
+.shop-emoji{font-size:2rem;margin-bottom:8px;display:block}
+.shop-name{font-weight:700;font-size:.82rem;color:var(--t)}
+.shop-cost{font-size:1rem;font-weight:800;color:var(--wr);margin-top:6px}
+.shop-label{font-size:.65rem;color:var(--ts)}
+.invite-btn{background:var(--p);color:#fff;border:none;padding:12px 20px;border-radius:var(--rmd);font-size:.95rem;font-weight:700;cursor:pointer;width:100%;margin-bottom:12px;box-shadow:var(--ss);transition:var(--tr);font-family:inherit}
+.invite-btn:hover{transform:translateY(-2px);box-shadow:var(--sm)}
+.invite-link-box{background:var(--bg);border-radius:var(--rmd);padding:12px;margin-bottom:12px;cursor:pointer;border:2px dashed var(--p)}
+.invite-link-box .link{font-size:.75rem;color:var(--p);word-break:break-all;font-family:monospace;font-weight:600}
+.list-item{display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg);border-radius:10px;margin-bottom:8px}
+.list-icon{font-size:1.2rem;flex-shrink:0}
+.list-info{flex:1}
+.list-title{font-size:.85rem;font-weight:600;color:var(--t)}
+.list-desc{font-size:.7rem;color:var(--ts);margin-top:2px}
+.list-pts{background:var(--wr);color:#fff;padding:2px 8px;border-radius:12px;font-size:.65rem;font-weight:700;flex-shrink:0}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-top:1px solid rgba(212,165,116,.15);display:flex;justify-content:space-around;padding:6px 0;padding-bottom:max(6px,env(safe-area-inset-bottom));box-shadow:0 -2px 8px rgba(0,0,0,.05)}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 12px;border:none;background:none;cursor:pointer;border-radius:10px;transition:var(--tr);color:var(--tl);font-family:var(--font);font-size:.65rem;font-weight:500}
+.nav-item.active{color:var(--p)}
+.nav-icon{font-size:18px;line-height:1}
+.nav-item:hover{background:var(--bg)}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal.active{display:flex}
+.modal-content{background:#fff;border-radius:var(--rlg);padding:20px;max-width:400px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-title{font-size:1.1rem;font-weight:700;color:var(--t);margin-bottom:14px}
+.modal-close{position:absolute;top:14px;right:14px;background:none;border:none;font-size:24px;cursor:pointer;color:var(--ts)}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--ok);color:#fff;padding:12px 20px;border-radius:50px;font-size:.85rem;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.2);z-index:300;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateX(-50%) translateY(20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+.empty-state{text-align:center;padding:40px 20px;color:var(--ts)}
+.empty-icon{font-size:48px;margin-bottom:12px}
+.empty-text{font-size:.9rem}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>📚 小小阅读家</h1>
+    <div class="version">阅读追踪器 v2.0</div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-val" id="statStreak">0</div>
+      <div class="stat-label">连续天数</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" id="statPoints">0</div>
+      <div class="stat-label">积分</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" id="statBadges">0/8</div>
+      <div class="stat-label">徽章</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('home')">🏠 首页</button>
+    <button class="tab-btn" onclick="switchTab('badges')">🏅 徽章</button>
+    <button class="tab-btn" onclick="switchTab('points')">💎 积分</button>
+    <button class="tab-btn" onclick="switchTab('shop')">🎁 商城</button>
+    <button class="tab-btn" onclick="switchTab('invite')">👥 邀请</button>
+    <button class="tab-btn" onclick="switchTab('review')">📝 感想</button>
+  </div>
+
+  <div class="content">
+    <!-- 首页 -->
+    <div class="tab-content active" id="home">
+      <div class="checkin-card">
+        <h3>今日打卡</h3>
+        <div class="streak-num" id="streakNum">0</div>
+        <div class="streak-flames" id="flames">🔥</div>
+        <button class="checkin-btn" id="checkinBtn" onclick="checkIn()">✅ 今日打卡</button>
+        <div style="font-size:.75rem;opacity:.8;margin-top:8px" id="checkinMsg"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="icon">📖</span>本周打卡</div>
+        <div id="weekGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="icon">🎯</span>本周目标</div>
+        <div id="goalsList"></div>
+      </div>
+    </div>
+
+    <!-- 徽章 -->
+    <div class="tab-content" id="badges">
+      <div class="card">
+        <div class="card-title"><span class="icon">🏅</span>我的徽章</div>
+        <div class="badge-grid" id="badgeGrid"></div>
+      </div>
+    </div>
+
+    <!-- 积分 -->
+    <div class="tab-content" id="points">
+      <div class="points-display">
+        <div class="points-num" id="pointsNum">0</div>
+        <div class="points-label">可用积分</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="icon">💡</span>积分获取方式</div>
+        <div id="earnList"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="icon">📜</span>积分历史</div>
+        <div id="pointsHistory"></div>
+      </div>
+    </div>
+
+    <!-- 商城 -->
+    <div class="tab-content" id="shop">
+      <div class="points-display">
+        <div class="points-num" id="shopPoints">0</div>
+        <div class="points-label">可用积分</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="icon">🎁</span>积分商城</div>
+        <div class="shop-grid" id="shopGrid"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="icon">📋</span>兑换记录</div>
+        <div id="exchangeHistory"></div>
+      </div>
+    </div>
+
+    <!-- 邀请 -->
+    <div class="tab-content" id="invite">
+      <div class="card">
+        <div class="card-title"><span class="icon">👥</span>邀请好友</div>
+        <div style="text-align:center;padding:16px 0">
+          <div style="font-size:2.4rem;margin-bottom:10px">🤝</div>
+          <div style="font-weight:700;margin-bottom:6px">邀请一位好友，双方各得 <span style="color:var(--wr)">+30 积分</span></div>
+          <div style="font-size:.8rem;color:var(--ts)">分享你的邀请码，让更多人一起阅读！</div>
+        </div>
+        <button class="invite-btn" onclick="generateInviteLink()">🎉 生成邀请链接</button>
+        <div class="invite-link-box" id="inviteLinkBox" style="display:none" onclick="copyInviteLink()">
+          <div style="margin-bottom:4px;color:var(--ts);font-size:.7rem">点击复制邀请链接</div>
+          <div class="link" id="inviteLinkDisplay"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="icon">👥</span>已邀请的好友</div>
+        <div id="inviteHistoryList"></div>
+      </div>
+    </div>
+
+    <!-- 感想 -->
+    <div class="tab-content" id="review">
+      <div class="card">
+        <div class="card-title"><span class="icon">📝</span>写阅读感想</div>
+        <div style="font-size:.8rem;color:var(--ts);margin-bottom:12px">写下100字以上的阅读感想，即可获得 <span style="color:var(--wr);font-weight:700">+15 积分</span> 奖励！</div>
+        <textarea id="reviewText" placeholder="分享你的阅读感受..." style="width:100%;padding:10px;border:2px solid rgba(212,165,116,.2);border-radius:10px;font-family:inherit;font-size:.9rem;resize:none;height:100px;outline:none" onchange="updateReviewCount()"></textarea>
+        <div style="font-size:.75rem;color:var(--ts);margin-top:6px"><span id="reviewCount">0</span> / 100 字</div>
+        <button class="invite-btn" onclick="submitReview()" style="margin-top:10px">提交感想</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="icon">📚</span>我的感想记录</div>
+        <div id="reviewList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="switchTab('home')"><div class="nav-icon">🏠</div><div>首页</div></button>
+    <button class="nav-item" onclick="switchTab('badges')"><div class="nav-icon">🏅</div><div>徽章</div></button>
+    <button class="nav-item" onclick="switchTab('points')"><div class="nav-icon">💎</div><div>积分</div></button>
+    <button class="nav-item" onclick="switchTab('shop')"><div class="nav-icon">🎁</div><div>商城</div></button>
+    <button class="nav-item" onclick="switchTab('invite')"><div class="nav-icon">👥</div><div>邀请</div></button>
+  </div>
+</div>
+
+<script>
+const BADGES = [
+  {id:1,name:'阅读新人',emoji:'📖',req:'首次打卡',pts:10},
+  {id:2,name:'渐入佳境',emoji:'🌿',req:'连续打卡3天',pts:30},
+  {id:3,name:'坚持不懈',emoji:'💪',req:'连续打卡7天',pts:50},
+  {id:4,name:'月度之星',emoji:'⭐',req:'单月打卡20天',pts:100},
+  {id:5,name:'小小评论家',emoji:'💬',req:'写5条感想',pts:40},
+  {id:6,name:'阅读专栏作家',emoji:'✍️',req:'写10条感想',pts:80},
+  {id:7,name:'阅读百页',emoji:'📚',req:'阅读100页',pts:60},
+  {id:8,name:'阅读达人',emoji:'🏆',req:'获得7个徽章',pts:200}
+];
+
+const SHOP_ITEMS = [
+  {id:1,name:'小书签',emoji:'🔖',cost:50},
+  {id:2,name:'阅读笔记本',emoji:'📓',cost:100},
+  {id:3,name:'书籍推荐券',emoji:'📖',cost:150},
+  {id:4,name:'阅读奖状',emoji:'🏅',cost:200},
+  {id:5,name:'特别徽章',emoji:'✨',cost:300},
+  {id:6,name:'阅读大礼包',emoji:'🎁',cost:500}
+];
+
+const EARN_WAYS = [
+  {icon:'✅',name:'每日打卡',desc:'每天打卡一次',pts:10},
+  {icon:'🔥',name:'连续打卡',desc:'连续打卡每天',pts:5},
+  {icon:'🎯',name:'周目标',desc:'完成周目标',pts:50},
+  {icon:'📅',name:'月目标',desc:'完成月目标',pts:200},
+  {icon:'👥',name:'邀请好友',desc:'邀请一位好友',pts:30},
+  {icon:'📝',name:'阅读感想',desc:'100字以上感想',pts:15},
+  {icon:'👨‍👩‍👧',name:'家长参与',desc:'家长评论点赞',pts:5},
+  {icon:'🏅',name:'获得徽章',desc:'获得新徽章',pts:10}
+];
+
+let data = {
+  checkins: [],
+  points: 0,
+  badges: [],
+  reviews: [],
+  invites: [],
+  exchanges: [],
+  pointsHistory: []
+};
+
+function getData() {
+  const saved = localStorage.getItem('readingTrackerV2');
+  if (saved) data = JSON.parse(saved);
+  return data;
+}
+
+function saveData() {
+  localStorage.setItem('readingTrackerV2', JSON.stringify(data));
+}
+
+function getToday() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function getStreak() {
+  if (!data.checkins.length) return 0;
+  let streak = 0;
+  const today = new Date();
+  for (let i = 0; i < 365; i++) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split('T')[0];
+    if (data.checkins.includes(dateStr)) streak++;
+    else break;
+  }
+  return streak;
+}
+
+function checkIn() {
+  const today = getToday();
+  if (data.checkins.includes(today)) {
+    showToast('今天已经打卡过了！');
+    return;
+  }
+  data.checkins.push(today);
+  data.points += 10;
+  data.pointsHistory.push({date:today,type:'打卡',pts:10});
+  checkBadges();
+  saveData();
+  render();
+  showToast('打卡成功！+10 积分');
+}
+
+function checkBadges() {
+  const streak = getStreak();
+  const reviewCount = data.reviews.length;
+  
+  if (!data.badges.includes(1) && data.checkins.length >= 1) {
+    data.badges.push(1);
+    data.points += 10;
+    showToast('🎉 获得徽章：阅读新人！');
+  }
+  if (!data.badges.includes(2) && streak >= 3) {
+    data.badges.push(2);
+    data.points += 30;
+    showToast('🎉 获得徽章：渐入佳境！');
+  }
+  if (!data.badges.includes(3) && streak >= 7) {
+    data.badges.push(3);
+    data.points += 50;
+    showToast('🎉 获得徽章：坚持不懈！');
+  }
+  if (!data.badges.includes(5) && reviewCount >= 5) {
+    data.badges.push(5);
+    data.points += 40;
+    showToast('🎉 获得徽章：小小评论家！');
+  }
+  if (!data.badges.includes(6) && reviewCount >= 10) {
+    data.badges.push(6);
+    data.points += 80;
+    showToast('🎉 获得徽章：阅读专栏作家！');
+  }
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  
+  document.getElementById(tab).classList.add('active');
+  document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+  
+  const navItems = document.querySelectorAll('.nav-item');
+  const tabIndex = ['home','badges','points','shop','invite'].indexOf(tab);
+  if (tabIndex >= 0 && tabIndex < navItems.length) {
+    navItems[tabIndex].classList.add('active');
+  }
+}
+
+function render() {
+  getData();
+  const streak = getStreak();
+  
+  document.getElementById('statStreak').textContent = streak;
+  document.getElementById('statPoints').textContent = data.points;
+  document.getElementById('statBadges').textContent = data.badges.length + '/8';
+  
+  document.getElementById('streakNum').textContent = streak;
+  document.getElementById('flames').textContent = '🔥'.repeat(Math.min(streak, 5));
+  
+  const today = getToday();
+  const checkedToday = data.checkins.includes(today);
+  const btn = document.getElementById('checkinBtn');
+  btn.textContent = checkedToday ? '✅ 已打卡' : '✅ 今日打卡';
+  btn.classList.toggle('done', checkedToday);
+  
+  // 周打卡
+  let weekHtml = '';
+  const today_date = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today_date);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const checked = data.checkins.includes(dateStr);
+    const dayName = ['日','一','二','三','四','五','六'][d.getDay()];
+    weekHtml += `<div style="text-align:center"><div style="font-size:.65rem;color:var(--ts);margin-bottom:4px">${dayName}</div><div style="width:32px;height:32px;border-radius:50%;background:${checked?'var(--ok)':'var(--bg)'};color:${checked?'#fff':'var(--ts)'};display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:600;margin:0 auto">${checked?'✓':d.getDate()}</div></div>`;
+  }
+  document.getElementById('weekGrid').innerHTML = weekHtml;
+  
+  // 目标
+  let goalHtml = '';
+  const thisWeekCheckins = data.checkins.filter(d => {
+    const date = new Date(d);
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    return date >= weekStart;
+  }).length;
+  goalHtml += `<div class="list-item"><div class="list-icon">📖</div><div class="list-info"><div class="list-title">本周打卡目标</div><div class="list-desc">${thisWeekCheckins}/7 天</div></div><div class="list-pts">${Math.round(thisWeekCheckins/7*100)}%</div></div>`;
+  document.getElementById('goalsList').innerHTML = goalHtml;
+  
+  // 徽章
+  let badgeHtml = '';
+  BADGES.forEach(b => {
+    const earned = data.badges.includes(b.id);
+    badgeHtml += `<div class="badge-card ${earned?'earned':'locked'}"><div class="badge-emoji">${b.emoji}</div><div class="badge-name">${b.name}</div><div class="badge-req">${b.req}</div><div class="badge-pts">+${b.pts}</div></div>`;
+  });
+  document.getElementById('badgeGrid').innerHTML = badgeHtml;
+  
+  // 积分
+  document.getElementById('pointsNum').textContent = data.points;
+  document.getElementById('shopPoints').textContent = data.points;
+  
+  let earnHtml = '';
+  EARN_WAYS.forEach(e => {
+    earnHtml += `<div class="list-item"><div class="list-icon">${e.icon}</div><div class="list-info"><div class="list-title">${e.name}</div><div class="list-desc">${e.desc}</div></div><div class="list-pts">+${e.pts}</div></div>`;
+  });
+  document.getElementById('earnList').innerHTML = earnHtml;
+  
+  let historyHtml = data.pointsHistory.slice(-5).reverse().map(h => `<div class="list-item"><div class="list-icon">💰</div><div class="list-info"><div class="list-title">${h.type}</div><div class="list-desc">${h.date}</div></div><div class="list-pts" style="color:var(--ok)">+${h.pts}</div></div>`).join('');
+  document.getElementById('pointsHistory').innerHTML = historyHtml || '<div class="empty-state">暂无记录</div>';
+  
+  // 商城
+  let shopHtml = '';
+  SHOP_ITEMS.forEach(item => {
+    const canBuy = data.points >= item.cost;
+    shopHtml += `<div class="shop-item" onclick="buyItem(${item.id})" style="opacity:${canBuy?1:0.5};cursor:${canBuy?'pointer':'not-allowed'}"><div class="shop-emoji">${item.emoji}</div><div class="shop-name">${item.name}</div><div class="shop-cost">${item.cost}</div><div class="shop-label">积分</div></div>`;
+  });
+  document.getElementById('shopGrid').innerHTML = shopHtml;
+  
+  let exchangeHtml = data.exchanges.map(e => `<div class="list-item"><div class="list-icon">${e.emoji}</div><div class="list-info"><div class="list-title">${e.name}</div><div class="list-desc">兑换码: ${e.code}</div></div></div>`).join('');
+  document.getElementById('exchangeHistory').innerHTML = exchangeHtml || '<div class="empty-state">暂无兑换记录</div>';
+  
+  // 邀请
+  let inviteHtml = data.invites.map(i => `<div class="list-item"><div class="list-icon">👤</div><div class="list-info"><div class="list-title">${i.name}</div><div class="list-desc">${i.date}</div></div><div class="list-pts">+30</div></div>`).join('');
+  document.getElementById('inviteHistoryList').innerHTML = inviteHtml || '<div class="empty-state">还没有邀请好友</div>';
+  
+  // 感想
+  let reviewHtml = data.reviews.map(r => `<div class="list-item"><div class="list-icon">📝</div><div class="list-info"><div class="list-title">${r.text.substring(0,20)}...</div><div class="list-desc">${r.date}</div></div><div class="list-pts">+15</div></div>`).join('');
+  document.getElementById('reviewList').innerHTML = reviewHtml || '<div class="empty-state">还没有写过感想</div>';
+}
+
+function buyItem(id) {
+  const item = SHOP_ITEMS.find(i => i.id === id);
+  if (data.points < item.cost) {
+    showToast('积分不足！');
+    return;
+  }
+  data.points -= item.cost;
+  const code = 'CODE' + Math.random().toString(36).substring(2,8).toUpperCase();
+  data.exchanges.push({...item, code});
+  saveData();
+  render();
+  showToast(`🎉 兑换成功！兑换码: ${code}`);
+}
+
+function generateInviteLink() {
+  const code = 'INVITE' + Math.random().toString(36).substring(2,8).toUpperCase();
+  const link = window.location.href + '?invite=' + code;
+  document.getElementById('inviteLinkDisplay').textContent = link;
+  document.getElementById('inviteLinkBox').style.display = 'block';
+}
+
+function copyInviteLink() {
+  const link = document.getElementById('inviteLinkDisplay').textContent;
+  navigator.clipboard.writeText(link);
+  showToast('链接已复制！');
+}
+
+function submitReview() {
+  const text = document.getElementById('reviewText').value;
+  if (text.length < 100) {
+    showToast('感想需要100字以上！');
+    return;
+  }
+  data.reviews.push({text, date: getToday()});
+  data.points += 15;
+  data.pointsHistory.push({date: getToday(), type: '阅读感想', pts: 15});
+  checkBadges();
+  saveData();
+  document.getElementById('reviewText').value = '';
+  render();
+  showToast('感想提交成功！+15 积分');
+}
+
+function updateReviewCount() {
+  const count = document.getElementById('reviewText').value.length;
+  document.getElementById('reviewCount').textContent = count;
+}
+
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2000);
+}
+
+// 初始化
+getData();
+render();
+</script>
+</body>
+</html>

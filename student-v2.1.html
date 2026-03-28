@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>📚 小小阅读家 - 阅读追踪器 v2.1</title>
+<style>
+:root{--p:#D4A574;--pd:#B8895A;--s:#4A7C6F;--sl:#5E9E8A;--a:#E8845F;--al:#F0A080;--bg:#FDF8F3;--c:#fff;--t:#2C2416;--ts:#7A6F5D;--tl:#A89880;--ok:#4CAF50;--wr:#FFB300;--er:#E55B5B;--ss:0 2px 8px rgba(44,36,22,.06);--sm:0 4px 20px rgba(44,36,22,.10);--rmd:16px;--rlg:24px;--font:system-ui,sans-serif;--tr:all .3s}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--t);min-height:100vh}
+.app{display:flex;flex-direction:column;min-height:100vh}
+.header{background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;padding:16px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.header h1{font-size:1.4rem;font-weight:700;margin-bottom:4px}
+.header .version{font-size:.75rem;opacity:.85}
+.user-card{background:#fff;border-radius:var(--rmd);padding:16px;margin:12px;box-shadow:var(--ss);display:flex;align-items:center;gap:12px}
+.user-avatar{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,var(--s),var(--sl));display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff}
+.user-info{flex:1}
+.user-name{font-size:1.1rem;font-weight:700;color:var(--t)}
+.user-stats{font-size:.75rem;color:var(--ts);margin-top:2px}
+.user-rank{background:var(--wr);color:#fff;padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:700}
+.stats-bar{display:flex;justify-content:space-around;padding:12px;background:#fff;border-bottom:1px solid rgba(212,165,116,.15)}
+.stat-item{text-align:center;flex:1}
+.stat-val{font-size:1.3rem;font-weight:800;color:var(--p);font-family:monospace}
+.stat-label{font-size:.65rem;color:var(--ts);margin-top:2px}
+.tabs{display:flex;background:#fff;border-bottom:2px solid rgba(212,165,116,.15);overflow-x:auto}
+.tabs::-webkit-scrollbar{display:none}
+.tab-btn{flex:1;min-width:70px;padding:12px 8px;background:none;border:none;font-size:.82rem;font-weight:600;color:var(--ts);cursor:pointer;position:relative;white-space:nowrap}
+.tab-btn.active{color:var(--p)}
+.tab-btn.active::after{content:'';position:absolute;bottom:-2px;left:15%;right:15%;height:3px;background:var(--p);border-radius:2px}
+.content{flex:1;padding:14px;padding-bottom:70px;max-width:600px;margin:0 auto;width:100%;overflow-y:auto}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.card{background:#fff;border-radius:var(--rmd);padding:16px;margin-bottom:12px;box-shadow:var(--ss)}
+.card-title{font-size:.95rem;font-weight:700;color:var(--t);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.input-group{margin-bottom:12px}
+.input-label{font-size:.8rem;font-weight:600;color:var(--ts);margin-bottom:6px;display:block}
+.input-field{width:100%;padding:12px;border:2px solid rgba(212,165,116,.2);border-radius:10px;font-family:inherit;font-size:.95rem;outline:none;transition:var(--tr)}
+.input-field:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(212,165,116,.1)}
+.select-field{width:100%;padding:12px;border:2px solid rgba(212,165,116,.2);border-radius:10px;font-family:inherit;font-size:.95rem;outline:none;background:#fff;cursor:pointer}
+.mood-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
+.mood-btn{padding:12px;border:2px solid rgba(212,165,116,.2);border-radius:10px;background:#fff;cursor:pointer;font-size:28px;transition:var(--tr);text-align:center}
+.mood-btn:hover{transform:scale(1.05)}
+.mood-btn.selected{border-color:var(--a);background:rgba(232,132,95,.1)}
+.checkin-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--a),var(--al));border:none;border-radius:var(--rmd);color:#fff;font-family:var(--font);font-size:1.05rem;font-weight:700;cursor:pointer;transition:var(--tr);box-shadow:0 4px 16px rgba(232,132,95,.35)}
+.checkin-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(232,132,95,.45)}
+.checkin-btn.done{background:linear-gradient(135deg,var(--ok),#66BB6A)}
+.rank-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg);border-radius:10px;margin-bottom:8px}
+.rank-pos{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem}
+.rank-pos.gold{background:linear-gradient(135deg,#FFD700,#FFA500);color:#fff}
+.rank-pos.silver{background:linear-gradient(135deg,#C0C0C0,#A8A8A8);color:#fff}
+.rank-pos.bronze{background:linear-gradient(135deg,#CD7F32,#8B4513);color:#fff}
+.rank-pos.normal{background:rgba(212,165,116,.2);color:var(--ts)}
+.rank-avatar{font-size:28px}
+.rank-info{flex:1}
+.rank-name{font-weight:700;font-size:.9rem}
+.rank-score{font-size:.75rem;color:var(--ts)}
+.rank-badge{font-size:.75rem;font-weight:700;padding:3px 8px;border-radius:12px}
+.badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.badge-card{background:var(--bg);border-radius:12px;padding:14px 10px;text-align:center;border:2px solid rgba(212,165,116,.2);transition:var(--tr)}
+.badge-card.earned{border-color:var(--wr);background:linear-gradient(135deg,#FFFDF5,#FFF8E0)}
+.badge-card.locked{opacity:.4;filter:grayscale(.6)}
+.badge-emoji{font-size:2rem;margin-bottom:6px;display:block}
+.badge-name{font-size:.75rem;font-weight:700}
+.badge-req{font-size:.65rem;color:var(--ts);margin-top:2px}
+.points-display{background:linear-gradient(135deg,var(--wr),#FFC107);color:#fff;border-radius:var(--rmd);padding:18px;text-align:center;margin-bottom:12px;box-shadow:0 6px 16px rgba(255,179,0,.25)}
+.points-num{font-size:2.6rem;font-weight:900;font-family:monospace}
+.points-label{font-size:.8rem;opacity:.9;margin-top:4px}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.shop-item{background:#fff;border-radius:12px;padding:14px;text-align:center;border:2px solid rgba(212,165,116,.2);cursor:pointer;transition:var(--tr)}
+.shop-item:hover{border-color:var(--p);transform:translateY(-2px)}
+.shop-emoji{font-size:2rem;margin-bottom:8px;display:block}
+.shop-name{font-weight:700;font-size:.82rem}
+.shop-cost{font-size:1rem;font-weight:800;color:var(--wr);margin-top:6px}
+.history-item{display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg);border-radius:10px;margin-bottom:8px}
+.history-icon{font-size:1.2rem}
+.history-info{flex:1}
+.history-title{font-size:.85rem;font-weight:600}
+.history-desc{font-size:.7rem;color:var(--ts)}
+.history-pts{background:var(--wr);color:#fff;padding:2px 8px;border-radius:12px;font-size:.65rem;font-weight:700}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-top:1px solid rgba(212,165,116,.15);display:flex;justify-content:space-around;padding:6px 0;padding-bottom:max(6px,env(safe-area-inset-bottom))}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 12px;border:none;background:none;cursor:pointer;border-radius:10px;color:var(--tl);font-family:var(--font);font-size:.65rem;font-weight:500}
+.nav-item.active{color:var(--p)}
+.nav-icon{font-size:18px}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--ok);color:#fff;padding:12px 20px;border-radius:50px;font-size:.85rem;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.2);z-index:300;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateX(-50%) translateY(20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+.empty{text-align:center;padding:20px;color:var(--ts)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>📚 小小阅读家</h1>
+    <div class="version">阅读追踪器 v2.1</div>
+  </div>
+
+  <div class="user-card" id="userCard">
+    <div class="user-avatar" id="userAvatar">👧</div>
+    <div class="user-info">
+      <div class="user-name" id="userName">点击设置姓名</div>
+      <div class="user-stats" id="userStats">已打卡 0 天</div>
+    </div>
+    <div class="user-rank" id="userRank">第1名</div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-val" id="statStreak">0</div>
+      <div class="stat-label">连续天数</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" id="statPoints">0</div>
+      <div class="stat-label">积分</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" id="statPages">0</div>
+      <div class="stat-label">总页数</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" id="statMinutes">0</div>
+      <div class="stat-label">总时长(分)</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" id="statBadges">0/8</div>
+      <div class="stat-label">徽章</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('checkin')">✅ 打卡</button>
+    <button class="tab-btn" onclick="switchTab('rank')">🏆 排名</button>
+    <button class="tab-btn" onclick="switchTab('badges')">🏅 徽章</button>
+    <button class="tab-btn" onclick="switchTab('points')">💎 积分</button>
+    <button class="tab-btn" onclick="switchTab('shop')">🎁 商城</button>
+  </div>
+
+  <div class="content">
+    <!-- 打卡页面 -->
+    <div class="tab-content active" id="checkin">
+      <div class="card">
+        <div class="card-title">📝 今日阅读打卡</div>
+        
+        <div class="input-group">
+          <label class="input-label">学生姓名</label>
+          <input type="text" class="input-field" id="studentName" placeholder="请输入姓名" onchange="saveName()">
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">阅读书籍</label>
+          <input type="text" class="input-field" id="bookName" placeholder="在读什么书？">
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">阅读页数</label>
+          <input type="number" class="input-field" id="pagesRead" placeholder="今天读了多少页？" min="1">
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">阅读时长</label>
+          <div style="display:flex;gap:8px">
+            <input type="number" class="input-field" id="readMinutes" placeholder="分钟" min="1" style="flex:1">
+            <span style="display:flex;align-items:center;color:var(--ts);font-size:.85rem">分钟</span>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">今天的心情</label>
+          <div class="mood-grid" id="moodGrid">
+            <button class="mood-btn" onclick="selectMood('😊')">😊</button>
+            <button class="mood-btn" onclick="selectMood('😄')">😄</button>
+            <button class="mood-btn" onclick="selectMood('😐')">😐</button>
+            <button class="mood-btn" onclick="selectMood('😢')">😢</button>
+            <button class="mood-btn" onclick="selectMood('😴')">😴</button>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">阅读感想（选填，100字以上+15积分）</label>
+          <textarea class="input-field" id="review" placeholder="分享你的阅读感受..." style="resize:none;height:80px"></textarea>
+          <div style="font-size:.7rem;color:var(--ts);margin-top:4px"><span id="reviewCount">0</span> / 100 字</div>
+        </div>
+
+        <button class="checkin-btn" id="checkinBtn" onclick="checkIn()">✅ 提交打卡</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📅 本周打卡记录</div>
+        <div id="weekGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px"></div>
+      </div>
+    </div>
+
+    <!-- 排名页面 -->
+    <div class="tab-content" id="rank">
+      <div class="card">
+        <div class="card-title">🏆 阅读排行榜</div>
+        <div id="rankList"></div>
+      </div>
+    </div>
+
+    <!-- 徽章页面 -->
+    <div class="tab-content" id="badges">
+      <div class="card">
+        <div class="card-title">🏅 我的徽章</div>
+        <div class="badge-grid" id="badgeGrid"></div>
+      </div>
+    </div>
+
+    <!-- 积分页面 -->
+    <div class="tab-content" id="points">
+      <div class="points-display">
+        <div class="points-num" id="pointsNum">0</div>
+        <div class="points-label">可用积分</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">💡 积分获取方式</div>
+        <div id="earnList"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📜 积分历史</div>
+        <div id="pointsHistory"></div>
+      </div>
+    </div>
+
+    <!-- 商城页面 -->
+    <div class="tab-content" id="shop">
+      <div class="points-display">
+        <div class="points-num" id="shopPoints">0</div>
+        <div class="points-label">可用积分</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🎁 积分商城</div>
+        <div class="shop-grid" id="shopGrid"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📋 兑换记录</div>
+        <div id="exchangeHistory"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="switchTab('checkin')"><div class="nav-icon">✅</div><div>打卡</div></button>
+    <button class="nav-item" onclick="switchTab('rank')"><div class="nav-icon">🏆</div><div>排名</div></button>
+    <button class="nav-item" onclick="switchTab('badges')"><div class="nav-icon">🏅</div><div>徽章</div></button>
+    <button class="nav-item" onclick="switchTab('points')"><div class="nav-icon">💎</div><div>积分</div></button>
+    <button class="nav-item" onclick="switchTab('shop')"><div class="nav-icon">🎁</div><div>商城</div></button>
+  </div>
+</div>
+
+<script>
+const BADGES = [
+  {id:1,name:'阅读新人',emoji:'📖',req:'首次打卡',pts:10},
+  {id:2,name:'渐入佳境',emoji:'🌿',req:'连续打卡3天',pts:30},
+  {id:3,name:'坚持不懈',emoji:'💪',req:'连续打卡7天',pts:50},
+  {id:4,name:'月度之星',emoji:'⭐',req:'单月打卡20天',pts:100},
+  {id:5,name:'小小评论家',emoji:'💬',req:'写5条感想',pts:40},
+  {id:6,name:'阅读百页',emoji:'📚',req:'阅读100页',pts:60},
+  {id:7,name:'阅读千页',emoji:'📕',req:'阅读1000页',pts:150},
+  {id:8,name:'阅读达人',emoji:'🏆',req:'获得7个徽章',pts:200}
+];
+
+const SHOP = [
+  {id:1,name:'小书签',emoji:'🔖',cost:50},
+  {id:2,name:'阅读笔记本',emoji:'📓',cost:100},
+  {id:3,name:'书籍推荐券',emoji:'📖',cost:150},
+  {id:4,name:'阅读奖状',emoji:'🏅',cost:200},
+  {id:5,name:'特别徽章',emoji:'✨',cost:300},
+  {id:6,name:'阅读大礼包',emoji:'🎁',cost:500}
+];
+
+const EARN = [
+  {icon:'✅',name:'每日打卡',pts:10},
+  {icon:'🔥',name:'连续打卡',pts:5},
+  {icon:'📖',name:'阅读页数',pts:'每10页+1'},
+  {icon:'📝',name:'阅读感想',pts:15},
+  {icon:'🏅',name:'获得徽章',pts:'10-200'}
+];
+
+let data = {
+  name: '',
+  currentBook: '',
+  checkins: [],
+  points: 0,
+  pages: 0,
+  minutes: 0,
+  badges: [],
+  reviews: [],
+  moods: [],
+  books: [],
+  exchanges: [],
+  history: []
+};
+
+let selectedMood = '';
+
+function load() {
+  const saved = localStorage.getItem('readingTrackerV2_1');
+  if (saved) data = JSON.parse(saved);
+}
+
+function save() {
+  localStorage.setItem('readingTrackerV2_1', JSON.stringify(data));
+}
+
+function getToday() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function getStreak() {
+  if (!data.checkins.length) return 0;
+  let s = 0;
+  const today = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const ds = d.toISOString().split('T')[0];
+    if (data.checkins.find(c => c.date === ds)) s++;
+    else break;
+  }
+  return s;
+}
+
+function saveName() {
+  data.name = document.getElementById('studentName').value.trim();
+  data.currentBook = document.getElementById('bookName').value.trim();
+  save();
+  render();
+}
+
+function selectMood(m) {
+  selectedMood = m;
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+  event.target.classList.add('selected');
+}
+
+function checkIn() {
+  const name = document.getElementById('studentName').value.trim();
+  const book = document.getElementById('bookName').value.trim();
+  const pages = parseInt(document.getElementById('pagesRead').value) || 0;
+  const minutes = parseInt(document.getElementById('readMinutes').value) || 0;
+  const review = document.getElementById('review').value.trim();
+  const today = getToday();
+
+  if (!name) {
+    showToast('请输入姓名！');
+    return;
+  }
+
+  if (data.checkins.find(c => c.date === today)) {
+    showToast('今天已经打卡过了！');
+    return;
+  }
+
+  let pts = 10;
+  data.pages += pages;
+  data.minutes += minutes;
+  pts += Math.floor(pages / 10);
+  pts += Math.floor(minutes / 30);
+
+  if (review.length >= 100) {
+    pts += 15;
+    data.reviews.push({text: review, date: today});
+  }
+
+  data.checkins.push({
+    date: today,
+    book: book,
+    pages: pages,
+    minutes: minutes,
+    mood: selectedMood,
+    review: review
+  });
+
+  data.name = name;
+  data.currentBook = book;
+  data.points += pts;
+  data.history.push({date: today, type: '打卡', pts: pts});
+
+  checkBadges();
+  save();
+  render();
+  
+  // 清空页数、时长、感想（保留姓名和书籍）
+  document.getElementById('pagesRead').value = '';
+  document.getElementById('readMinutes').value = '';
+  document.getElementById('review').value = '';
+  document.getElementById('reviewCount').textContent = '0';
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+  selectedMood = '';
+  
+  showToast('打卡成功！+' + pts + ' 积分');
+}
+
+function checkBadges() {
+  const streak = getStreak();
+  
+  if (!data.badges.includes(1) && data.checkins.length >= 1) {
+    data.badges.push(1);
+    data.points += 10;
+    showToast('🎉 获得徽章：阅读新人！');
+  }
+  if (!data.badges.includes(2) && streak >= 3) {
+    data.badges.push(2);
+    data.points += 30;
+    showToast('🎉 获得徽章：渐入佳境！');
+  }
+  if (!data.badges.includes(3) && streak >= 7) {
+    data.badges.push(3);
+    data.points += 50;
+    showToast('🎉 获得徽章：坚持不懈！');
+  }
+  if (!data.badges.includes(5) && data.reviews.length >= 5) {
+    data.badges.push(5);
+    data.points += 40;
+    showToast('🎉 获得徽章：小小评论家！');
+  }
+  if (!data.badges.includes(6) && data.pages >= 100) {
+    data.badges.push(6);
+    data.points += 60;
+    showToast('🎉 获得徽章：阅读百页！');
+  }
+  if (!data.badges.includes(7) && data.pages >= 1000) {
+    data.badges.push(7);
+    data.points += 150;
+    showToast('🎉 获得徽章：阅读千页！');
+  }
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+  
+  document.getElementById(tab).classList.add('active');
+  document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+  
+  const navs = document.querySelectorAll('.nav-item');
+  const idx = ['checkin','rank','badges','points','shop'].indexOf(tab);
+  if (idx >= 0 && idx < navs.length) navs[idx].classList.add('active');
+}
+
+function render() {
+  load();
+  const streak = getStreak();
+
+  // 用户信息
+  document.getElementById('userName').textContent = data.name || '点击设置姓名';
+  document.getElementById('userStats').textContent = `已打卡 ${data.checkins.length} 天 | ${data.pages} 页 | ${data.minutes} 分钟`;
+  document.getElementById('statStreak').textContent = streak;
+  document.getElementById('statPoints').textContent = data.points;
+  document.getElementById('statPages').textContent = data.pages;
+  document.getElementById('statMinutes').textContent = data.minutes;
+  document.getElementById('statBadges').textContent = data.badges.length + '/8';
+
+  // 排名（模拟）
+  let rankHtml = `
+    <div class="rank-item">
+      <div class="rank-pos gold">1</div>
+      <div class="rank-avatar">👧</div>
+      <div class="rank-info">
+        <div class="rank-name">${data.name || '我'}</div>
+        <div class="rank-score">${data.points} 积分 | ${data.pages} 页</div>
+      </div>
+      <div class="rank-badge" style="background:var(--wr)">第1名</div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-pos silver">2</div>
+      <div class="rank-avatar">👦</div>
+      <div class="rank-info">
+        <div class="rank-name">小明</div>
+        <div class="rank-score">${Math.max(0, data.points - 50)} 积分</div>
+      </div>
+    </div>
+    <div class="rank-item">
+      <div class="rank-pos bronze">3</div>
+      <div class="rank-avatar">👧</div>
+      <div class="rank-info">
+        <div class="rank-name">小红</div>
+        <div class="rank-score">${Math.max(0, data.points - 100)} 积分</div>
+      </div>
+    </div>
+  `;
+  document.getElementById('rankList').innerHTML = rankHtml;
+
+  // 周打卡
+  let weekHtml = '';
+  const td = new Date();
+  const days = ['日','一','二','三','四','五','六'];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(td);
+    d.setDate(d.getDate() - i);
+    const ds = d.toISOString().split('T')[0];
+    const checked = data.checkins.find(c => c.date === ds);
+    weekHtml += `<div style="text-align:center">
+      <div style="font-size:.65rem;color:var(--ts);margin-bottom:4px">${days[d.getDay()]}</div>
+      <div style="width:32px;height:32px;border-radius:50%;background:${checked?'var(--ok)':'var(--bg)'};color:${checked?'#fff':'var(--ts)'};display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:600;margin:0 auto">${checked?'✓':d.getDate()}</div>
+    </div>`;
+  }
+  document.getElementById('weekGrid').innerHTML = weekHtml;
+
+  // 徽章
+  let badgeHtml = '';
+  BADGES.forEach(b => {
+    const earned = data.badges.includes(b.id);
+    badgeHtml += `<div class="badge-card ${earned?'earned':'locked'}">
+      <div class="badge-emoji">${b.emoji}</div>
+      <div class="badge-name">${b.name}</div>
+      <div class="badge-req">${b.req}</div>
+    </div>`;
+  });
+  document.getElementById('badgeGrid').innerHTML = badgeHtml;
+
+  // 积分
+  document.getElementById('pointsNum').textContent = data.points;
+  document.getElementById('shopPoints').textContent = data.points;
+
+  let earnHtml = '';
+  EARN.forEach(e => {
+    earnHtml += `<div class="history-item">
+      <div class="history-icon">${e.icon}</div>
+      <div class="history-info">
+        <div class="history-title">${e.name}</div>
+      </div>
+      <div class="history-pts">+${e.pts}</div>
+    </div>`;
+  });
+  document.getElementById('earnList').innerHTML = earnHtml;
+
+  let histHtml = data.history.slice(-5).reverse().map(h => 
+    `<div class="history-item">
+      <div class="history-icon">💰</div>
+      <div class="history-info">
+        <div class="history-title">${h.type}</div>
+        <div class="history-desc">${h.date}</div>
+      </div>
+      <div class="history-pts" style="background:var(--ok)">+${h.pts}</div>
+    </div>`
+  ).join('') || '<div class="empty">暂无记录</div>';
+  document.getElementById('pointsHistory').innerHTML = histHtml;
+
+  // 商城
+  let shopHtml = '';
+  SHOP.forEach(item => {
+    const canBuy = data.points >= item.cost;
+    shopHtml += `<div class="shop-item" onclick="buy(${item.id})" style="opacity:${canBuy?1:0.5};cursor:${canBuy?'pointer':'not-allowed'}">
+      <div class="shop-emoji">${item.emoji}</div>
+      <div class="shop-name">${item.name}</div>
+      <div class="shop-cost">${item.cost}</div>
+    </div>`;
+  });
+  document.getElementById('shopGrid').innerHTML = shopHtml;
+
+  let exHtml = data.exchanges.map(e => 
+    `<div class="history-item">
+      <div class="history-icon">${e.emoji}</div>
+      <div class="history-info">
+        <div class="history-title">${e.name}</div>
+        <div class="history-desc">兑换码: ${e.code}</div>
+      </div>
+    </div>`
+  ).join('') || '<div class="empty">暂无兑换记录</div>';
+  document.getElementById('exchangeHistory').innerHTML = exHtml;
+
+  // 感想字数
+  document.getElementById('review').addEventListener('input', function() {
+    document.getElementById('reviewCount').textContent = this.value.length;
+  });
+}
+
+function buy(id) {
+  const item = SHOP.find(i => i.id === id);
+  if (data.points < item.cost) {
+    showToast('积分不足！');
+    return;
+  }
+  data.points -= item.cost;
+  const code = 'CODE' + Math.random().toString(36).substring(2,8).toUpperCase();
+  data.exchanges.push({...item, code});
+  save();
+  render();
+  showToast('🎉 兑换成功！兑换码: ' + code);
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2000);
+}
+
+// 初始化
+load();
+render();
+
+// 恢复姓名和书籍
+if (data.name) {
+  document.getElementById('studentName').value = data.name;
+}
+if (data.currentBook) {
+  document.getElementById('bookName').value = data.currentBook;
+}
+
+// 姓名和书籍自动保存
+document.getElementById('studentName').addEventListener('change', function() {
+  data.name = this.value.trim();
+  save();
+  render();
+});
+
+document.getElementById('bookName').addEventListener('change', function() {
+  data.currentBook = this.value.trim();
+  save();
+});
+</script>
+</body>
+</html>

@@ -89,7 +89,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--t);min-height:100v
 <body>
 <div class="app">
   <div class="header">
-    <h1>📚 小小阅读家</h1>
+    <h1>📚 巨文小小阅读家</h1>
     <div class="version">阅读追踪器 v2.1</div>
   </div>
 
@@ -136,55 +136,84 @@ body{font-family:var(--font);background:var(--bg);color:var(--t);min-height:100v
   <div class="content">
     <!-- 打卡页面 -->
     <div class="tab-content active" id="checkin">
-      <div class="card">
-        <div class="card-title">📝 今日阅读打卡</div>
-        
+      <!-- 首次使用：设置姓名 -->
+      <div class="card" id="setupCard" style="display:none">
+        <div class="card-title">👋 欢迎来到巨文小小阅读家</div>
         <div class="input-group">
-          <label class="input-label">学生姓名</label>
-          <input type="text" class="input-field" id="studentName" placeholder="请输入姓名" onchange="saveName()">
+          <label class="input-label">请输入你的姓名</label>
+          <input type="text" class="input-field" id="studentNameSetup" placeholder="你的姓名">
         </div>
-
-        <div class="input-group">
-          <label class="input-label">阅读书籍</label>
-          <input type="text" class="input-field" id="bookName" placeholder="在读什么书？">
-        </div>
-
-        <div class="input-group">
-          <label class="input-label">阅读页数</label>
-          <input type="number" class="input-field" id="pagesRead" placeholder="今天读了多少页？" min="1">
-        </div>
-
-        <div class="input-group">
-          <label class="input-label">阅读时长</label>
-          <div style="display:flex;gap:8px">
-            <input type="number" class="input-field" id="readMinutes" placeholder="分钟" min="1" style="flex:1">
-            <span style="display:flex;align-items:center;color:var(--ts);font-size:.85rem">分钟</span>
-          </div>
-        </div>
-
-        <div class="input-group">
-          <label class="input-label">今天的心情</label>
-          <div class="mood-grid" id="moodGrid">
-            <button class="mood-btn" onclick="selectMood('😊')">😊</button>
-            <button class="mood-btn" onclick="selectMood('😄')">😄</button>
-            <button class="mood-btn" onclick="selectMood('😐')">😐</button>
-            <button class="mood-btn" onclick="selectMood('😢')">😢</button>
-            <button class="mood-btn" onclick="selectMood('😴')">😴</button>
-          </div>
-        </div>
-
-        <div class="input-group">
-          <label class="input-label">阅读感想（选填，100字以上+15积分）</label>
-          <textarea class="input-field" id="review" placeholder="分享你的阅读感受..." style="resize:none;height:80px"></textarea>
-          <div style="font-size:.7rem;color:var(--ts);margin-top:4px"><span id="reviewCount">0</span> / 100 字</div>
-        </div>
-
-        <button class="checkin-btn" id="checkinBtn" onclick="checkIn()">✅ 提交打卡</button>
+        <button class="checkin-btn" onclick="saveSetup()">✅ 开始阅读之旅</button>
       </div>
 
-      <div class="card">
-        <div class="card-title">📅 本周打卡记录</div>
-        <div id="weekGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px"></div>
+      <!-- 已设置姓名：显示打卡界面 -->
+      <div id="mainCheckin" style="display:none">
+        <div class="card">
+          <div class="card-title">📚 我的书架 <span style="font-size:.75rem;color:var(--ts);font-weight:400">← 左右滑动 →</span></div>
+          <div id="bookShelf" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none"></div>
+          <button onclick="showAddBook()" style="width:100%;margin-top:12px;padding:12px;background:linear-gradient(135deg,var(--s),var(--sl));border:none;border-radius:10px;color:#fff;font-weight:700;font-size:.9rem;cursor:pointer">➕ 添加新书籍</button>
+        </div>
+
+        <!-- 添加书籍弹窗 -->
+        <div id="addBookModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px">
+          <div style="background:#fff;border-radius:16px;padding:20px;max-width:400px;width:100%">
+            <div style="font-size:1.1rem;font-weight:700;margin-bottom:14px">📚 添加新书籍</div>
+            <input type="text" id="newBookInput" placeholder="输入书名" style="width:100%;padding:12px;border:2px solid rgba(212,165,116,.2);border-radius:10px;font-size:.95rem;outline:none;margin-bottom:12px">
+            <div style="display:flex;gap:10px">
+              <button onclick="hideAddBook()" style="flex:1;padding:12px;border:2px solid var(--ts);border-radius:10px;background:#fff;color:var(--ts);font-weight:700;cursor:pointer">取消</button>
+              <button onclick="confirmAddBook()" style="flex:1;padding:12px;border:none;border-radius:10px;background:var(--ok);color:#fff;font-weight:700;cursor:pointer">确定</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📝 今日阅读打卡</div>
+          
+          <div class="input-group">
+            <label class="input-label">正在阅读</label>
+            <select class="select-field" id="bookSelect">
+              <option value="">选择书籍</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">阅读情况</label>
+            <div style="display:flex;gap:10px">
+              <div style="flex:1">
+                <input type="number" class="input-field" id="pagesRead" placeholder="页数" min="1">
+                <div style="font-size:.7rem;color:var(--ts);text-align:center;margin-top:4px">📖 阅读页数</div>
+              </div>
+              <div style="flex:1">
+                <input type="number" class="input-field" id="readMinutes" placeholder="分钟" min="1">
+                <div style="font-size:.7rem;color:var(--ts);text-align:center;margin-top:4px">⏱️ 阅读时长</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">今天的心情</label>
+            <div class="mood-grid" id="moodGrid">
+              <button class="mood-btn" onclick="selectMood('😊')">😊</button>
+              <button class="mood-btn" onclick="selectMood('😄')">😄</button>
+              <button class="mood-btn" onclick="selectMood('😐')">😐</button>
+              <button class="mood-btn" onclick="selectMood('😢')">😢</button>
+              <button class="mood-btn" onclick="selectMood('😴')">😴</button>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">阅读感想（选填，100字以上+15积分）</label>
+            <textarea class="input-field" id="review" placeholder="分享你的阅读感受..." style="resize:none;height:80px"></textarea>
+            <div style="font-size:.7rem;color:var(--ts);margin-top:4px"><span id="reviewCount">0</span> / 100 字</div>
+          </div>
+
+          <button class="checkin-btn" id="checkinBtn" onclick="checkIn()">✅ 提交打卡</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📅 本周打卡记录</div>
+          <div id="weekGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px"></div>
+        </div>
       </div>
     </div>
 
@@ -281,6 +310,7 @@ const EARN = [
 
 let data = {
   name: '',
+  books: [],
   currentBook: '',
   checkins: [],
   points: 0,
@@ -289,7 +319,6 @@ let data = {
   badges: [],
   reviews: [],
   moods: [],
-  books: [],
   exchanges: [],
   history: []
 };
@@ -297,12 +326,22 @@ let data = {
 let selectedMood = '';
 
 function load() {
-  const saved = localStorage.getItem('readingTrackerV2_1');
-  if (saved) data = JSON.parse(saved);
+  const saved = localStorage.getItem('juanwen_reading_v2');
+  if (saved) {
+    try {
+      data = JSON.parse(saved);
+    } catch(e) {
+      data = {name:'',books:[],currentBook:'',checkins:[],points:0,pages:0,minutes:0,badges:[],reviews:[],moods:[],exchanges:[],history:[]};
+    }
+  }
 }
 
 function save() {
-  localStorage.setItem('readingTrackerV2_1', JSON.stringify(data));
+  try {
+    localStorage.setItem('juanwen_reading_v2', JSON.stringify(data));
+  } catch(e) {
+    console.log('Save error:', e);
+  }
 }
 
 function getToday() {
@@ -323,11 +362,16 @@ function getStreak() {
   return s;
 }
 
-function saveName() {
-  data.name = document.getElementById('studentName').value.trim();
-  data.currentBook = document.getElementById('bookName').value.trim();
+function saveSetup() {
+  const name = document.getElementById('studentNameSetup').value.trim();
+  if (!name) {
+    showToast('请输入姓名！');
+    return;
+  }
+  data.name = name;
   save();
   render();
+  showToast('欢迎 ' + name + '！');
 }
 
 function selectMood(m) {
@@ -336,21 +380,40 @@ function selectMood(m) {
   event.target.classList.add('selected');
 }
 
+function addBook() {
+  const bookName = document.getElementById('newBookName').value.trim();
+  if (!bookName) return;
+  
+  if (!data.books.find(b => b.name === bookName)) {
+    data.books.push({
+      name: bookName,
+      pages: 0,
+      minutes: 0,
+      checkins: 0
+    });
+    save();
+    render();
+  }
+  
+  document.getElementById('bookSelect').value = bookName;
+  document.getElementById('newBookGroup').style.display = 'none';
+  document.getElementById('newBookName').value = '';
+}
+
 function checkIn() {
-  const name = document.getElementById('studentName').value.trim();
-  const book = document.getElementById('bookName').value.trim();
+  const book = document.getElementById('bookSelect').value;
   const pages = parseInt(document.getElementById('pagesRead').value) || 0;
   const minutes = parseInt(document.getElementById('readMinutes').value) || 0;
   const review = document.getElementById('review').value.trim();
   const today = getToday();
 
-  if (!name) {
-    showToast('请输入姓名！');
+  if (data.checkins.find(c => c.date === today)) {
+    showToast('今天已经打卡过了！');
     return;
   }
 
-  if (data.checkins.find(c => c.date === today)) {
-    showToast('今天已经打卡过了！');
+  if (!book || book === 'new') {
+    showToast('请选择或添加书籍！');
     return;
   }
 
@@ -365,6 +428,14 @@ function checkIn() {
     data.reviews.push({text: review, date: today});
   }
 
+  // 更新书籍统计
+  const bookData = data.books.find(b => b.name === book);
+  if (bookData) {
+    bookData.pages += pages;
+    bookData.minutes += minutes;
+    bookData.checkins++;
+  }
+
   data.checkins.push({
     date: today,
     book: book,
@@ -374,8 +445,6 @@ function checkIn() {
     review: review
   });
 
-  data.name = name;
-  data.currentBook = book;
   data.points += pts;
   data.history.push({date: today, type: '打卡', pts: pts});
 
@@ -383,7 +452,7 @@ function checkIn() {
   save();
   render();
   
-  // 清空页数、时长、感想（保留姓名和书籍）
+  // 清空输入
   document.getElementById('pagesRead').value = '';
   document.getElementById('readMinutes').value = '';
   document.getElementById('review').value = '';
@@ -446,6 +515,16 @@ function render() {
   load();
   const streak = getStreak();
 
+  // 判断是否已设置姓名
+  if (!data.name) {
+    document.getElementById('setupCard').style.display = 'block';
+    document.getElementById('mainCheckin').style.display = 'none';
+    return;
+  } else {
+    document.getElementById('setupCard').style.display = 'none';
+    document.getElementById('mainCheckin').style.display = 'block';
+  }
+
   // 用户信息
   document.getElementById('userName').textContent = data.name || '点击设置姓名';
   document.getElementById('userStats').textContent = `已打卡 ${data.checkins.length} 天 | ${data.pages} 页 | ${data.minutes} 分钟`;
@@ -455,13 +534,48 @@ function render() {
   document.getElementById('statMinutes').textContent = data.minutes;
   document.getElementById('statBadges').textContent = data.badges.length + '/8';
 
+  // 书架显示（横向滚动）
+  let bookShelfHtml = '';
+  if (data.books.length === 0) {
+    bookShelfHtml = '<div style="text-align:center;padding:30px 20px;color:var(--ts);width:100%"><div style="font-size:3rem;margin-bottom:10px">📚</div><div>还没有添加书籍</div><div style="font-size:.8rem;margin-top:6px">点击下方按钮添加</div></div>';
+  } else {
+    data.books.forEach(book => {
+      bookShelfHtml += `<div style="flex-shrink:0;width:110px;background:var(--bg);border-radius:10px;padding:12px;text-align:center;border:2px solid rgba(212,165,116,.2)">
+        <div style="font-size:2rem;margin-bottom:6px">📚</div>
+        <div style="font-weight:700;font-size:.78rem;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${book.name}</div>
+        <div style="font-size:.65rem;color:var(--ts)">📖 ${book.pages}页</div>
+        <div style="font-size:.65rem;color:var(--ts)">⏱️ ${book.minutes}分</div>
+      </div>`;
+    });
+  }
+  document.getElementById('bookShelf').innerHTML = bookShelfHtml;
+
+  // 书籍选择下拉框
+  let bookSelectHtml = '<option value="">选择书籍</option>';
+  data.books.forEach(book => {
+    bookSelectHtml += `<option value="${book.name}">${book.name}</option>`;
+  });
+  bookSelectHtml += '<option value="new">+ 添加新书</option>';
+  document.getElementById('bookSelect').innerHTML = bookSelectHtml;
+
+  // 书籍选择事件
+  const bookSelectEl = document.getElementById('bookSelect');
+  if (bookSelectEl) {
+    bookSelectEl.onchange = function() {
+      if (this.value === 'new') {
+        showAddBook();
+        this.value = '';
+      }
+    };
+  }
+
   // 排名（模拟）
   let rankHtml = `
     <div class="rank-item">
       <div class="rank-pos gold">1</div>
       <div class="rank-avatar">👧</div>
       <div class="rank-info">
-        <div class="rank-name">${data.name || '我'}</div>
+        <div class="rank-name">${data.name}</div>
         <div class="rank-score">${data.points} 积分 | ${data.pages} 页</div>
       </div>
       <div class="rank-badge" style="background:var(--wr)">第1名</div>
@@ -565,9 +679,12 @@ function render() {
   document.getElementById('exchangeHistory').innerHTML = exHtml;
 
   // 感想字数
-  document.getElementById('review').addEventListener('input', function() {
-    document.getElementById('reviewCount').textContent = this.value.length;
-  });
+  const reviewEl = document.getElementById('review');
+  if (reviewEl) {
+    reviewEl.addEventListener('input', function() {
+      document.getElementById('reviewCount').textContent = this.value.length;
+    });
+  }
 }
 
 function buy(id) {
@@ -590,6 +707,41 @@ function showToast(msg) {
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 2000);
+}
+
+function showAddBook() {
+  document.getElementById('addBookModal').style.display = 'flex';
+  document.getElementById('newBookInput').value = '';
+  document.getElementById('newBookInput').focus();
+}
+
+function hideAddBook() {
+  document.getElementById('addBookModal').style.display = 'none';
+}
+
+function confirmAddBook() {
+  const bookName = document.getElementById('newBookInput').value.trim();
+  if (!bookName) {
+    showToast('请输入书名！');
+    return;
+  }
+  
+  if (data.books.find(b => b.name === bookName)) {
+    showToast('这本书已经存在！');
+    return;
+  }
+  
+  data.books.push({
+    name: bookName,
+    pages: 0,
+    minutes: 0,
+    checkins: 0
+  });
+  
+  save();
+  render();
+  hideAddBook();
+  showToast('书籍添加成功！');
 }
 
 // 初始化

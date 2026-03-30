@@ -345,7 +345,11 @@ function save() {
 }
 
 function getToday() {
-  return new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function getStreak() {
@@ -723,19 +727,19 @@ function confirmAddBook() {
   const bookName = document.getElementById('newBookInput').value.trim();
   if (!bookName) {
     showToast('请输入书名！');
-    return;
+    返回;
   }
   
   if (data.books.find(b => b.name === bookName)) {
     showToast('这本书已经存在！');
-    return;
+    返回;
   }
   
   data.books.push({
-    name: bookName,
-    pages: 0,
-    minutes: 0,
-    checkins: 0
+    名称: 书名,
+    页数: 0,
+    分钟: 0,
+    签到: 0
   });
   
   save();
@@ -752,7 +756,7 @@ render();
 if (data.name) {
   document.getElementById('studentName').value = data.name;
 }
-if (data.currentBook) {
+如果 (data.currentBook) {
   document.getElementById('bookName').value = data.currentBook;
 }
 
